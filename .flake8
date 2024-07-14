@@ -1,9 +1,0 @@
-[flake8]
-ignore = E501  # Ignore line length for example
-exclude =
-    .git,
-    __pycache__,
-    migrations,
-    settings.py
-    .venv,
-max-complexity = 10
