@@ -13,5 +13,20 @@ repos:
     hooks:
       # Run the linter.
       - id: ruff
+        args: [ --fix ]
       # Run the formatter.
       - id: ruff-format
+  - repo: local
+    hooks:
+      - id: pytest-cov
+        name: pytest-cov
+        entry: pytest
+        language: system
+        pass_filenames: false
+        always_run: true
+        args: [
+          "--cov=apps",
+          "--cov-report=term-missing",
+          "--cov-fail-under=80",
+          "tests/"
+        ]

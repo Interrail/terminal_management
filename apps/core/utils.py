@@ -1,3 +1,5 @@
+from typing import Dict, Any, Type, Optional
+
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import Http404
@@ -7,15 +9,13 @@ from rest_framework.serializers import as_serializer_error
 from rest_framework.views import exception_handler
 
 
-def create_serializer_class(name, fields):
+def create_serializer_class(name: str, fields: Dict[str, Any]) -> Type:
     return type(name, (serializers.Serializer,), fields)
 
 
-def inline_serializer(*, fields, data=None, **kwargs):
-    # Important note if you are using `drf-spectacular`
-    # Please refer to the following issue:
-    # https://github.com/HackSoftware/Django-Styleguide/issues/105#issuecomment-1669468898
-    # Since you might need to use unique names (uuids) for each inline serializer
+def inline_serializer(
+    *, fields: Dict[str, Any], data: Optional[Dict[str, Any]] = None, **kwargs: Any
+) -> serializers.Serializer:
     serializer_class = create_serializer_class(name="inline_serializer", fields=fields)
 
     if data is not None:
@@ -25,20 +25,14 @@ def inline_serializer(*, fields, data=None, **kwargs):
 
 
 class ApplicationError(Exception):
-    def __init__(self, message, extra=None):
+    def __init__(self, message: str, extra: Optional[Dict[str, Any]] = None) -> None:
         super().__init__(message)
 
         self.message = message
         self.extra = extra or {}
 
 
-def custom_exception_handler(exc, ctx):
-    """
-    {
-        "message": "Error message",
-        "extra": {}
-    }
-    """
+def custom_exception_handler(exc, ctx: Dict[str, Any]) -> Optional[Response]:
     if isinstance(exc, DjangoValidationError):
         exc = exceptions.ValidationError(as_serializer_error(exc))
 

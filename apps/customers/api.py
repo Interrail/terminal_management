@@ -44,11 +44,16 @@ class CompanyUpdateApi(APIView):
         name = serializers.CharField(required=False)
         address = serializers.CharField(required=False)
 
-    class CompanyOutputSerializer(serializers.Serializer):
+    class CompanyUpdateOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
         name = serializers.CharField(read_only=True)
         address = serializers.CharField(read_only=True)
 
+    @extend_schema(
+        summary="Update company",
+        responses=CompanyUpdateOutputSerializer,
+        request=CompanyUpdateSerializer,
+    )
     def put(self, request, company_id):
         serializer = self.CompanyUpdateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -56,7 +61,7 @@ class CompanyUpdateApi(APIView):
         company = company_service.update_company(
             company_id, **serializer.validated_data
         )
-        result = self.CompanyOutputSerializer(company).data
+        result = self.CompanyUpdateOutputSerializer(company).data
         return Response(result, status=status.HTTP_200_OK)
 
 
@@ -73,7 +78,9 @@ class CompanyListApi(APIView):
         id = serializers.IntegerField(read_only=True)
         name = serializers.CharField(read_only=True)
         address = serializers.CharField(read_only=True)
+        containers_count = serializers.IntegerField(read_only=True)
 
+    @extend_schema(summary="List companies", responses=CompanyListOutputSerializer)
     def get(self, request):
         filter_serializer = self.FilterSerializer(data=request.query_params)
         filter_serializer.is_valid(raise_exception=True)
@@ -90,12 +97,23 @@ class CompanyListApi(APIView):
 
 
 class CompanyDetailApi(APIView):
-    class CompanyOutputSerializer(serializers.Serializer):
+    class CompanyDetailOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
         name = serializers.CharField(read_only=True)
         address = serializers.CharField(read_only=True)
 
+    @extend_schema(summary="Get company", responses=CompanyDetailOutputSerializer)
     def get(self, request, company_id):
         company = CompanyService().get_company_by_id(company_id)
-        result = self.CompanyOutputSerializer(company).data
+        result = self.CompanyDetailOutputSerializer(company).data
         return Response(result, status=status.HTTP_200_OK)
+
+
+class CompanyDeleteApi(APIView):
+    class CompanyDeleteSerializer(serializers.Serializer):
+        pass
+
+    @extend_schema(summary="Delete company", responses=CompanyDeleteSerializer)
+    def delete(self, request, company_id):
+        CompanyService().delete_company(company_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)

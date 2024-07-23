@@ -3,13 +3,17 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.text import slugify
 
-from apps.core.models import TimeStampedModel
+from apps.core.models import BaseModel
 from apps.users.models import CustomUser
 
 
-class Company(TimeStampedModel):
-    name = models.CharField(max_length=255, unique=True, db_index=True)
-    validators = [RegexValidator(r"\S", "Name cannot be empty or just whitespace.")]
+class Company(BaseModel):
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        validators=[RegexValidator(r"\S", "Name cannot be empty or just whitespace.")],
+    )
     address = models.TextField(blank=True)
     slug = models.SlugField(max_length=255, unique=True, db_index=True)
 
@@ -27,9 +31,13 @@ class Company(TimeStampedModel):
         return self.name
 
 
-class CompanyUser(TimeStampedModel):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+class CompanyUser(BaseModel):
+    company = models.ForeignKey(
+        Company, on_delete=models.CASCADE, related_name="company_users"
+    )
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="company_users"
+    )
 
     class Meta:
         verbose_name_plural = "Company Users"

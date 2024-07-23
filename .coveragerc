@@ -1,0 +1,42 @@
+[run]
+source = your_project_name
+omit =
+    */migrations/*
+    */tests/*
+    */admin.py
+    */apps.py
+    */urls.py
+    */settings/*
+    */wsgi.py
+    */asgi.py
+    manage.py
+    conftest.py
+    */__init__.py
+    */factories.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    def __str__
+    if self.debug:
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass
+    except ImportError:
+    def setUp
+    def tearDown
+    @abstractmethod
+    @abc.abstractmethod
+    class .*\bProtocol\):
+
+ignore_errors = True
+
+[html]
+directory = coverage_html_report
+
+[xml]
+output = coverage.xml
+
+[json]
+output = coverage.json

@@ -1,12 +1,23 @@
 from collections import OrderedDict
 
+from django.db.models import QuerySet
 from rest_framework.pagination import LimitOffsetPagination as _LimitOffsetPagination
+from rest_framework.request import Request
 from rest_framework.response import Response
+from typing import Any, Type, List, Dict
+
+from rest_framework.serializers import Serializer
+from rest_framework.views import APIView
 
 
 def get_paginated_response(
-    *, pagination_class, serializer_class, queryset, request, view
-):
+    *,
+    pagination_class: Type[_LimitOffsetPagination],
+    serializer_class: Type[Serializer],
+    queryset: QuerySet,
+    request: Request,
+    view: APIView,
+) -> Response:
     paginator = pagination_class()
 
     page = paginator.paginate_queryset(queryset, request, view=view)
@@ -21,10 +32,10 @@ def get_paginated_response(
 
 
 class LimitOffsetPagination(_LimitOffsetPagination):
-    default_limit = 10
-    max_limit = 50
+    default_limit: int = 10
+    max_limit: int = 50
 
-    def get_paginated_data(self, data):
+    def get_paginated_data(self, data: List[Dict[str, Any]]) -> OrderedDict:
         return OrderedDict(
             [
                 ("limit", self.limit),
@@ -36,7 +47,7 @@ class LimitOffsetPagination(_LimitOffsetPagination):
             ]
         )
 
-    def get_paginated_response(self, data):
+    def get_paginated_response(self, data: List[Dict[str, Any]]) -> Response:
         """
         We redefine this method in order to return `limit` and `offset`.
         This is used by the frontend to construct the pagination itself.

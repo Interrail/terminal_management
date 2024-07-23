@@ -92,4 +92,4 @@ class UserMeApi(APIView):
 
 
 class CustomTokenVerifyView(TokenVerifyView):
-    serializer_class = CustomTokenVerifySerializer
+    serializer_class = CustomTokenVerifySerializer  # type: ignore
