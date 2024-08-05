@@ -5,9 +5,15 @@ from django.db.models import ExpressionWrapper, Avg, F, DurationField, Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from apps.containers.filters import ContainerTerminalVisitFilter
-from apps.containers.models import Container, ContainerTerminalVisit
+from apps.containers.filters import ContainerStorageFilter
+from apps.containers.models import (
+    Container,
+    ContainerStorage,
+    ContainerImage,
+    ContainerDocument,
+)
 from apps.customers.services import CompanyService
+from apps.locations.services import ContainerLocationService
 
 
 class ContainerService:
@@ -41,16 +47,18 @@ class ContainerService:
         container.delete()
 
 
-class ContainerTerminalVisitService:
+class ContainerStorageService:
     def __init__(self):
         self.container_service = ContainerService()
         self.company_service = CompanyService()
+        self.location_service = ContainerLocationService()
 
     @transaction.atomic
     def register_container_entry(
         self,
         container_name,
         container_type,
+        container_location,
         customer_id,
         is_empty,
         entry_time=None,
@@ -64,9 +72,9 @@ class ContainerTerminalVisitService:
 
         customer = self.company_service.get_company_by_id(customer_id)
         entry_time = entry_time or timezone.now()
-
-        storage_entry = ContainerTerminalVisit.objects.create(
-            container=container,
+        container_location = self.location_service.create(container, container_location)
+        storage_entry = ContainerStorage.objects.create(
+            container_location=container_location,
             customer=customer,
             is_empty=is_empty,
             entry_time=entry_time,
@@ -76,7 +84,16 @@ class ContainerTerminalVisitService:
         return storage_entry
 
     def update_container_visit(self, visit_id, data):
-        visit = get_object_or_404(ContainerTerminalVisit, id=visit_id)
+        visit = get_object_or_404(ContainerStorage, id=visit_id)
+        container_data = {
+            "name": data.pop("container_name"),
+            "type": data.pop("container_type"),
+        }
+
+        self.container_service.update_container(
+            data.pop("container_id"), container_data
+        )
+
         for key, value in data.items():
             setattr(visit, key, value)
         visit.save()
@@ -84,34 +101,52 @@ class ContainerTerminalVisitService:
 
     def get_all_containers_visits(self, filters=None):
         filters = filters or {}
-        qs = ContainerTerminalVisit.objects.select_related(
-            "container", "customer"
+        qs = ContainerStorage.objects.select_related(
+            "container_location__container", "customer"
         ).prefetch_related("images", "documents")
-
         status = filters.pop("status", "all")
-        if status == "in_storage":
+        if status == "in_terminal":
             qs = qs.filter(exit_time__isnull=True)
-        elif status == "left_storage":
+        elif status == "left_terminal":
             qs = qs.filter(exit_time__isnull=False)
 
-        return ContainerTerminalVisitFilter(filters, queryset=qs).qs
+        return ContainerStorageFilter(filters, queryset=qs).qs
 
     @staticmethod
-    def get_container_types():
-        return list(
-            ContainerTerminalVisit.objects.annotate(type=F("container__type"))
-            .values("type")
-            .annotate(count=Count("container__type"))
-            .order_by("-count")
-        )
+    def get_container_types(status=None):
+        if status == "in_terminal":
+            return list(
+                ContainerStorage.objects.filter(exit_time__isnull=True)
+                .annotate(type=F("container__type"))
+                .values("type")
+                .annotate(count=Count("container__type"))
+                .order_by("-count")
+            )
+        elif status == "left_terminal":
+            return list(
+                ContainerStorage.objects.filter(exit_time__isnull=False)
+                .annotate(type=F("container__type"))
+                .values("type")
+                .annotate(count=Count("container__type"))
+                .order_by("-count")
+            )
+        else:
+            return list(
+                ContainerStorage.objects.annotate(
+                    type=F("container_location__container__type")
+                )
+                .values("type")
+                .annotate(count=Count("container_location__container__type"))
+                .order_by("-count")
+            )
 
     @staticmethod
     def get_busiest_customers():
         return list(
-            ContainerTerminalVisit.objects.annotate(customer_name=F("customer__name"))
+            ContainerStorage.objects.annotate(customer_name=F("customer__name"))
             .values("customer_name")
             .annotate(visit_count=Count("id"))
-            .order_by("-visit_count")[:5]
+            .order_by("-visit_count")[:8]
         )
 
     @staticmethod
@@ -120,7 +155,7 @@ class ContainerTerminalVisitService:
         thirty_days_ago = now - timedelta(days=30)
 
         # Perform a single query to get multiple statistics
-        visit_stats = ContainerTerminalVisit.objects.aggregate(
+        visit_stats = ContainerStorage.objects.aggregate(
             total_containers=Count("id"),
             empty_containers=Count("id", filter=Q(is_empty=True)),
             laden_containers=Count("id", filter=Q(is_empty=False)),
@@ -141,7 +176,7 @@ class ContainerTerminalVisitService:
             visit_stats["entries_30_days"] + visit_stats["exits_30_days"]
         ) / 30
 
-        MAX_CAPACITY = 1000  # Replace with actual capacity
+        MAX_CAPACITY = 60  # Replace with actual capacity
         storage_utilization = (
             (visit_stats["total_containers"] / MAX_CAPACITY) * 100
             if MAX_CAPACITY > 0
@@ -158,16 +193,45 @@ class ContainerTerminalVisitService:
         }
 
     @classmethod
-    def get_statistics(cls, type=None):
+    def get_statistics(cls, type=None, status=None):
         if type == "container":
-            return {"common_types": cls.get_container_types()}
+            return {"common_types": cls.get_container_types(status)}
         elif type == "customer":
             return {"busiest_customers": cls.get_busiest_customers()}
         elif type == "storage":
             return cls.get_storage_statistics()
         else:
             return {
-                **cls.get_storage_statistics(),
-                "common_types": cls.get_container_types(),
+                "storage": cls.get_storage_statistics(),
+                "common_types": cls.get_container_types(status),
                 "busiest_customers": cls.get_busiest_customers(),
             }
+
+    def delete(self, visit_id):
+        visit = get_object_or_404(ContainerStorage, id=visit_id)
+        visit.delete()
+
+
+class ContainerImageService:
+    @transaction.atomic
+    def create_images(self, visit_id, images):
+        visit = get_object_or_404(ContainerStorage, id=visit_id)
+        for image in images:
+            visit.images.create(image=image)
+        return visit
+
+    def delete_image(self, image_id):
+        image = get_object_or_404(ContainerImage, id=image_id)
+        image.delete()
+
+
+class ContainerDocumentService:
+    def create_documents(self, visit_id, documents):
+        visit = get_object_or_404(ContainerStorage, id=visit_id)
+        for document in documents:
+            visit.documents.create(document=document)
+        return visit
+
+    def delete_document(self, document_id):
+        document = get_object_or_404(ContainerDocument, id=document_id)
+        document.delete()

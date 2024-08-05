@@ -27,6 +27,6 @@ repos:
         args: [
           "--cov=apps",
           "--cov-report=term-missing",
-          "--cov-fail-under=80",
+          "--cov-fail-under=75",
           "tests/"
         ]

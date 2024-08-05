@@ -6,9 +6,15 @@ from apps.containers.api import (
     ContainerDetailApi,
     ContainerCreateApi,
     ContainerListApi,
-    ContainerTerminalVisitRegisterApi,
-    ContainerTerminalVisitListApi,
+    ContainerStorageRegisterApi,
+    ContainerStorageListApi,
     ContainerStorageStatisticsApi,
+    ContainerStorageUpdateApi,
+    ContainerStorageDeleteApi,
+    ContainerStorageAddImageListApi,
+    ContainerStorageImageDeleteApi,
+    ContainerStorageAddDocumentListApi,
+    ContainerStorageDocumentDeleteApi,
 )
 
 urlpatterns = [
@@ -27,17 +33,47 @@ urlpatterns = [
     ),
     path(
         "container_visit_register/",
-        ContainerTerminalVisitRegisterApi.as_view(),
+        ContainerStorageRegisterApi.as_view(),
         name="container_storage_register",
     ),
     path(
+        "container_visit/<int:visit_id>/update/",
+        ContainerStorageUpdateApi.as_view(),
+        name="container_storage_update",
+    ),
+    path(
+        "container_visit/<int:visit_id>/delete/",
+        ContainerStorageDeleteApi.as_view(),
+        name="container_storage_delete",
+    ),
+    path(
         "containers_visit_list/",
-        ContainerTerminalVisitListApi.as_view(),
+        ContainerStorageListApi.as_view(),
         name="container_storage_register_by_id",
     ),
     path(
         "container_statistics/",
         ContainerStorageStatisticsApi.as_view(),
         name="container_statistics",
+    ),
+    path(
+        "container_visit/<int:visit_id>/image/create/",
+        ContainerStorageAddImageListApi.as_view(),
+        name="container_storage_image",
+    ),
+    path(
+        "container_visit/image/<int:image_id>/delete/",
+        ContainerStorageImageDeleteApi.as_view(),
+        name="container_storage_image_delete",
+    ),
+    path(
+        "container_visit/<int:visit_id>/document/create/",
+        ContainerStorageAddDocumentListApi.as_view(),
+        name="container_storage_document",
+    ),
+    path(
+        "container_visit/document/<int:document_id>/delete/",
+        ContainerStorageDocumentDeleteApi.as_view(),
+        name="container_storage_document_delete",
     ),
 ]

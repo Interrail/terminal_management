@@ -1,16 +1,16 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.models import BaseModel, SoftDeleteModel
+from apps.core.models import BaseModel
 from apps.customers.models import Company
 
 
-class Container(BaseModel, SoftDeleteModel):
+class Container(BaseModel):
     class ContainerType(models.TextChoices):
         TWENTY = "20", _("20 ft Standard")
-        TWENTY_HIGH_CUBE = "20H", _("20 ft High Cube")
         FORTY = "40", _("40 ft Standard")
         FORTY_HIGH_CUBE = "40HC", _("40 ft High Cube")
         FORTY_FIVE = "45", _("45 ft High Cube")
@@ -24,7 +24,11 @@ class Container(BaseModel, SoftDeleteModel):
 
     @property
     def in_storage(self):
-        return self.terminal_visits.filter(exit_time=None).exists()
+        return self.locations.filter(Q(yard__isnull=False)).exists()
+
+    @property
+    def teu(self):
+        return 1 if self.type in self.ContainerType.TWENTY else 2
 
     class Meta:
         db_table = "container"
@@ -35,11 +39,12 @@ class Container(BaseModel, SoftDeleteModel):
         return f"{self.name} ({self.get_type_display()})"
 
 
-class ContainerTerminalVisit(BaseModel, SoftDeleteModel):
-    container = models.ForeignKey(
-        Container,
-        on_delete=models.CASCADE,
+class ContainerStorage(BaseModel):
+    container_location = models.ForeignKey(
+        "locations.ContainerLocation",
+        on_delete=models.SET_NULL,
         related_name="terminal_visits",
+        null=True,
     )
     customer = models.ForeignKey(
         Company, on_delete=models.CASCADE, related_name="container_visits"
@@ -51,30 +56,30 @@ class ContainerTerminalVisit(BaseModel, SoftDeleteModel):
     is_empty = models.BooleanField(default=False)
 
     class Meta:
-        db_table = "container_terminal_visit"
-        verbose_name = "Container Terminal Visit"
-        verbose_name_plural = "Container Terminal Visits"
+        db_table = "container_storage"
+        verbose_name = "Container Storage"
+        verbose_name_plural = "Container Storages"
         ordering = ["-entry_time"]
 
     def __str__(self):
-        status = "In terminal" if self.exit_time is None else "Exited"
-        return f"{self.container.name} - {self.customer.name} - {status} (Entered: {self.entry_time})"
+        status = "In storage" if self.exit_time is None else "Exited"
+        return f" - {self.customer.name} - {status} (Entered: {self.entry_time})"
 
     def clean(self):
         super().clean()
         if self.exit_time and self.exit_time <= self.entry_time:
             raise ValidationError(_("Exit time must be after entry time."))
 
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        if self.exit_time:
-            self.storage_days = (self.exit_time - self.entry_time).days
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     self.full_clean()
+    #     if self.exit_time:
+    #         self.storage_days = (self.exit_time - self.entry_time).days
+    #     super().save(*args, **kwargs)
 
 
 class ContainerImage(BaseModel):
     container = models.ForeignKey(
-        ContainerTerminalVisit,
+        ContainerStorage,
         on_delete=models.CASCADE,
         related_name="images",
     )
@@ -87,12 +92,12 @@ class ContainerImage(BaseModel):
         verbose_name_plural = "Container Images"
 
     def __str__(self):
-        return f"{self.container.container.name} - {self.created_at}"
+        return f"- {self.created_at}"
 
 
 class ContainerDocument(BaseModel):
     container = models.ForeignKey(
-        ContainerTerminalVisit,
+        ContainerStorage,
         on_delete=models.CASCADE,
         related_name="documents",
     )
@@ -105,4 +110,4 @@ class ContainerDocument(BaseModel):
         verbose_name_plural = "Container Documents"
 
     def __str__(self):
-        return f"{self.container.container.name} - {self.created_at}"
+        return f" - {self.created_at}"
