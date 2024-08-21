@@ -4,21 +4,19 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.containers.models import Container
+from apps.core.choices import ContainerType
 from apps.core.pagination import LimitOffsetPagination
 from apps.locations.services import YardService
 
 
 class YardListApi(APIView):
     class FilterSerializer(serializers.Serializer):
+        yard_id = serializers.IntegerField(required=False)
         container_name = serializers.CharField(required=False)
-        container_types = serializers.ChoiceField(
-            choices=Container.ContainerType.choices, required=False
-        )
+        container_types = serializers.CharField(required=False)
         date = serializers.DateField(required=False)
         customer_name = serializers.CharField(required=False)
         is_empty = serializers.BooleanField(required=False, allow_null=True)
-        storage_days = serializers.IntegerField(required=False)
         notes = serializers.CharField(required=False)
 
     class Pagination(LimitOffsetPagination):
@@ -35,8 +33,9 @@ class YardListApi(APIView):
 class AvailablePlacesApi(APIView):
     class FilterSerializer(serializers.Serializer):
         container_type = serializers.ChoiceField(
-            choices=Container.ContainerType.choices, required=True
+            choices=ContainerType.choices, required=True
         )
+        customer_id = serializers.IntegerField(required=False)
 
     @extend_schema(
         parameters=[
@@ -44,14 +43,20 @@ class AvailablePlacesApi(APIView):
                 name="container_type",
                 required=True,
                 type=OpenApiTypes.STR,
-            )
+            ),
+            OpenApiParameter(
+                name="customer_id",
+                required=False,
+                type=OpenApiTypes.INT,
+            ),
         ]
     )
     def get(self, request):
         serializer = self.FilterSerializer(data=request.query_params)
         serializer.is_valid(raise_exception=True)
-
-        yards = YardService().get_places(serializer.validated_data["container_type"])
+        container_type = serializer.validated_data["container_type"]
+        customer_id = serializer.validated_data.get("customer_id", None)
+        yards = YardService().get_places(container_type, customer_id)
         return Response(yards, status=status.HTTP_200_OK)
 
 

@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import Container, ContainerStorage, ContainerDocument, ContainerImage
+from .models import ContainerStorage, ContainerDocument, ContainerImage
+from ..core.models import Container
 
 admin.site.register(Container)
 admin.site.register(ContainerStorage)

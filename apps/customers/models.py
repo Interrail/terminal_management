@@ -20,7 +20,6 @@ class Company(BaseModel):
     class Meta:
         verbose_name_plural = "Companies"
         verbose_name = "Company"
-        ordering = ["name"]
 
     def save(self, *args, **kwargs):
         if not self.slug:

@@ -30,12 +30,7 @@ SECRET_KEY = env("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    "10.0.2.246",
-    "localhost",
-    "34bd-84-54-75-155.ngrok-free.app",
-    "2eb5-84-54-75-155.ngrok-free.app",
-]
+ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 # Application definition
 
@@ -54,8 +49,8 @@ INSTALLED_APPS = [
     # Local apps
     "apps.core.apps.CoreConfig",
     "apps.users.apps.UsersConfig",
-    "apps.customers.apps.CustomersConfig",
     "apps.containers.apps.ContainersConfig",
+    "apps.customers.apps.CustomersConfig",
     "apps.locations.apps.LocationsConfig",
     "apps.finance.apps.FinanceConfig",
 ]

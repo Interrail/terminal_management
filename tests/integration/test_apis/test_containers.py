@@ -2,7 +2,8 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
-from apps.containers.models import Container
+from apps.core.choices import ContainerType
+from apps.core.models import Container
 
 
 @pytest.mark.django_db
@@ -22,8 +23,10 @@ class TestContainerAPI:
         access_token = obtain_jwt_token["access"]
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_create")
-        data = {"name": "CONT-003", "type": Container.ContainerType.FORTY}
+        print(url)
+        data = {"name": "CONT-003", "type": ContainerType.FORTY}
         response = api_client.post(url, data, format="json")
+
         assert response.status_code == status.HTTP_201_CREATED
         assert "name" in response.data
         assert response.data["name"] == "CONT-003"
@@ -34,7 +37,7 @@ class TestContainerAPI:
         access_token = obtain_jwt_token["access"]
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_create")
-        data = {"name": container.name, "type": Container.ContainerType.FORTY}
+        data = {"name": container.name, "type": ContainerType.FORTY}
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -51,7 +54,7 @@ class TestContainerAPI:
         access_token = obtain_jwt_token["access"]
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_update", kwargs={"container_id": container.id})
-        data = {"name": "CONT-UPDATED", "type": Container.ContainerType.FORTY}
+        data = {"name": "CONT-UPDATED", "type": ContainerType.FORTY}
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["name"] == "CONT-UPDATED"
@@ -75,7 +78,7 @@ class TestContainerAPI:
         access_token = obtain_jwt_token["access"]
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_update", kwargs={"container_id": 9999999})
-        data = {"name": "CONT-UPDATED", "type": Container.ContainerType.FORTY}
+        data = {"name": "CONT-UPDATED", "type": ContainerType.FORTY}
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 

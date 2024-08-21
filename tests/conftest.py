@@ -2,11 +2,12 @@ import pytest
 from django.urls import reverse
 
 from apps.containers.models import (
-    Container,
     ContainerStorage,
     ContainerDocument,
     ContainerImage,
 )
+from apps.core.models import Container
+from apps.core.choices import ContainerType
 from apps.customers.models import Company
 from apps.locations.models import Yard, ContainerLocation
 from apps.users.models import CustomUser
@@ -51,9 +52,7 @@ def obtain_jwt_token(api_client, user):
 
 @pytest.fixture
 def container():
-    return Container.objects.create(
-        name="ABCD19980228", type=Container.ContainerType.TWENTY
-    )
+    return Container.objects.create(name="ABCD1998028", type=ContainerType.TWENTY)
 
 
 @pytest.fixture
@@ -63,7 +62,7 @@ def customer():
 
 @pytest.fixture
 def container_location(container, yard):
-    if container.type == Container.ContainerType.TWENTY:
+    if container.type == ContainerType.TWENTY:
         return ContainerLocation.objects.create(
             container=container,
             yard=yard,
@@ -86,6 +85,7 @@ def container_location(container, yard):
 @pytest.fixture
 def container_terminal_visit(container, customer, container_location):
     return ContainerStorage.objects.create(
+        container=container,
         container_location=container_location,
         customer=customer,
         entry_time="2024-01-01T00:00:00Z",

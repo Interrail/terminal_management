@@ -3,11 +3,10 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.containers.models import Container
 from apps.core.models import BaseModel
 
 
-class Yard(BaseModel):
+class Yard(models.Model):
     name = models.CharField(max_length=50, unique=True, verbose_name=_("Yard Name"))
     max_rows = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     max_columns = models.PositiveIntegerField(validators=[MinValueValidator(1)])
@@ -21,17 +20,32 @@ class Yard(BaseModel):
         verbose_name = _("Yard")
         verbose_name_plural = _("Yards")
 
-    @property
-    def total_capacity(self):
-        return self.max_rows * self.max_columns * self.max_tiers
-
     def __str__(self):
         return f"{self.name} ({self.max_rows}x{self.max_columns}x{self.max_tiers})"
+
+    def is_position_available(
+        self, row, column_start, column_end, tier, exclude_location=None
+    ):
+        conflicting_locations = (
+            self.container_locations.filter(
+                row=row,
+                tier=tier,
+            )
+            .exclude(column_end__lt=column_start)
+            .exclude(column_start__gt=column_end)
+        )
+
+        if exclude_location:
+            conflicting_locations = conflicting_locations.exclude(
+                pk=exclude_location.pk
+            )
+
+        return not conflicting_locations.exists()
 
 
 class ContainerLocation(BaseModel):
     container = models.ForeignKey(
-        Container,
+        "core.Container",
         on_delete=models.CASCADE,
         related_name="locations",
         verbose_name=_("Container"),
@@ -91,8 +105,23 @@ class ContainerLocation(BaseModel):
                 raise ValidationError(
                     _("Column start cannot be greater than column end.")
                 )
+            if not self.yard.is_position_available(
+                self.row,
+                self.column_start,
+                self.column_end,
+                self.tier,
+                exclude_location=self,
+            ):
+                raise ValidationError(
+                    _("This position conflicts with an existing container location.")
+                )
 
     def __str__(self):
         if self.yard:
             return f"{self.container.name} - Yard: {self.yard.name}, Row: {self.row}, Column: {self.column_start}-{self.column_end}, Tier: {self.tier}"
         return f"{self.container.name} - Not in yard"
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+
+        super().save(*args, **kwargs)

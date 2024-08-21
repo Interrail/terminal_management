@@ -1,61 +1,7 @@
 from django.db import models
-from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
-
-class SoftDeleteQuerySet(models.QuerySet):
-    def delete(self, hard=False):
-        if hard:
-            return super().delete()
-        return super().update(deleted=True, deleted_at=timezone.now())
-
-    def hard_delete(self):
-        return super().delete()
-
-    def restore(self):
-        return super().update(deleted=False, deleted_at=None)
-
-
-class SoftDeleteManager(models.Manager):
-    def __init__(self, *args, **kwargs):
-        self.with_deleted = kwargs.pop("with_deleted", False)
-        super().__init__(*args, **kwargs)
-
-    def get_queryset(self):
-        qs = SoftDeleteQuerySet(self.model)
-        if not self.with_deleted:
-            return qs.filter(deleted=False)
-        return qs
-
-    def hard_delete(self):
-        return self.get_queryset().hard_delete()
-
-    def restore(self):
-        return self.get_queryset().restore()
-
-
-class SoftDeleteModel(models.Model):
-    deleted_at = models.DateTimeField(null=True, blank=True)
-
-    deleted = models.BooleanField(default=False)
-
-    objects = SoftDeleteManager()
-    all_objects = SoftDeleteManager(with_deleted=True)
-
-    class Meta:
-        abstract = True
-
-    def delete(self, using=None, keep_parents=False, hard=False):
-        if hard:
-            super().delete(using=using, keep_parents=keep_parents)
-        else:
-            self.deleted = True
-            self.deleted_at = timezone.now()
-            self.save(using=using)
-
-    def restore(self):
-        self.deleted = False
-        self.deleted_at = None
-        self.save()
+from apps.core.choices import ContainerType
 
 
 class BaseModel(models.Model):
@@ -64,3 +10,32 @@ class BaseModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class Container(models.Model):
+    name = models.CharField(
+        max_length=12, unique=True, db_index=True, verbose_name=_("Container Name")
+    )
+    type = models.CharField(
+        max_length=4, choices=ContainerType.choices, verbose_name=_("Container Type")
+    )
+
+    class Meta:
+        db_table = "container"
+        verbose_name = _("Container")
+        verbose_name_plural = _("Containers")
+
+    def __str__(self):
+        return f"{self.name} ({self.get_type_display()})"
+
+    @property
+    def in_storage(self):
+        return self.storages.filter(exit_time__isnull=True).exists()
+
+    @property
+    def teu(self):
+        size = self.type
+        if size == ContainerType.TWENTY:
+            return 1
+        else:
+            return 2

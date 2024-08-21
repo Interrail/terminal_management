@@ -3,25 +3,26 @@ import random
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from apps.core.choices import ContainerType
 from apps.core.factories import (
     CompanyFactory,
     ContainerFactory,
     ContainerLocationFactory,
-    ContainerTerminalVisitFactory,
+    ContainerStorageFactory,
     ContainerImageFactory,
     ContainerDocumentFactory,
+    CustomerStorageCostFactory,
 )
+from apps.finance.models import CustomerStorageCost
 from apps.locations.models import Yard
 
 
 class Command(BaseCommand):
-    help = (
-        "Generates test data for Container related models including Yards and Locations"
-    )
+    help = "Generates test data for Container related models including Locations and Storages"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--companies", type=int, default=25, help="Number of companies to create"
+            "--companies", type=int, default=10, help="Number of companies to create"
         )
         parser.add_argument(
             "--fill_percentage",
@@ -44,13 +45,18 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         with transaction.atomic():
-            # Create companies
+            # Create companies and their price lists
             companies = [CompanyFactory() for _ in range(options["companies"])]
-            self.stdout.write(self.style.SUCCESS(f"Created {len(companies)} companies"))
+            self.create_price_lists(companies)
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Created {len(companies)} companies with price lists"
+                )
+            )
 
             yards = Yard.objects.all()
             container_locations = []
-            terminal_visits = []
+            container_storages = []
 
             for yard in yards:
                 self.fill_yard(
@@ -58,7 +64,7 @@ class Command(BaseCommand):
                     options["fill_percentage"],
                     companies,
                     container_locations,
-                    terminal_visits,
+                    container_storages,
                 )
 
             self.stdout.write(self.style.SUCCESS(f"Processed {len(yards)} yards"))
@@ -69,24 +75,25 @@ class Command(BaseCommand):
             )
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Created {len(terminal_visits)} container terminal visits"
+                    f"Created {len(container_storages)} container storages"
                 )
             )
 
-            # Create container images (optional)
+            # Create container images and documents (optional)
             if options["images"] > 0:
                 images = [
-                    ContainerImageFactory(container=random.choice(terminal_visits))
+                    ContainerImageFactory(container=random.choice(container_storages))
                     for _ in range(options["images"])
                 ]
                 self.stdout.write(
                     self.style.SUCCESS(f"Created {len(images)} container images")
                 )
 
-            # Create container documents (optional)
             if options["documents"] > 0:
                 documents = [
-                    ContainerDocumentFactory(container=random.choice(terminal_visits))
+                    ContainerDocumentFactory(
+                        container=random.choice(container_storages)
+                    )
                     for _ in range(options["documents"])
                 ]
                 self.stdout.write(
@@ -97,8 +104,18 @@ class Command(BaseCommand):
                 self.style.SUCCESS("Test data generation completed successfully")
             )
 
+    def create_price_lists(self, companies):
+        for company in companies:
+            for container_type in ContainerType.values:
+                for is_empty in [True, False]:
+                    CustomerStorageCostFactory(
+                        customer=company,
+                        container_type=container_type,
+                        is_empty=is_empty,
+                    )
+
     def fill_yard(
-        self, yard, fill_percentage, companies, container_locations, terminal_visits
+        self, yard, fill_percentage, companies, container_locations, container_storages
     ):
         yard_layout = [
             [0 for _ in range(yard.max_columns)] for _ in range(yard.max_rows)
@@ -110,12 +127,9 @@ class Command(BaseCommand):
         while containers_to_create > 0:
             row = random.randint(0, yard.max_rows - 1)
             col = random.randint(0, yard.max_columns - 1)
-            container_type = random.choice(["20", "40", "40HC"])
+            container_type = random.choice(ContainerType.values)
 
-            if container_type == "20":
-                columns_needed = 1
-            else:
-                columns_needed = 2
+            columns_needed = 2 if container_type in ["40", "40HC", "45"] else 1
 
             if col + columns_needed > yard.max_columns:
                 continue
@@ -129,18 +143,29 @@ class Command(BaseCommand):
                 location = ContainerLocationFactory(
                     container=container,
                     yard=yard,
-                    row=row
-                    + 1,  # +1 because arrays are 0-indexed but yard is 1-indexed
+                    row=row + 1,
                     column_start=col + 1,
                     column_end=col + columns_needed,
                     tier=tier,
                 )
                 container_locations.append(location)
 
-                visit = ContainerTerminalVisitFactory(
-                    container_location=location, customer=random.choice(companies)
+                customer = random.choice(companies)
+                is_empty = random.choice([True, False])
+
+                # Get the existing CustomerStorageCost for this customer, container type, and empty status
+                storage_cost = CustomerStorageCost.objects.get(
+                    customer=customer, container_type=container_type, is_empty=is_empty
                 )
-                terminal_visits.append(visit)
+
+                storage = ContainerStorageFactory(
+                    container=container,
+                    container_location=location,
+                    customer=customer,
+                    is_empty=is_empty,
+                    storage_cost=storage_cost,
+                )
+                container_storages.append(storage)
 
                 for i in range(columns_needed):
                     yard_layout[row][col + i] = tier

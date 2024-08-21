@@ -4,7 +4,7 @@ from django_filters import FilterSet
 
 class ContainerStorageFilter(FilterSet):
     container = django_filters.CharFilter(
-        field_name="container_location__container__name", lookup_expr="icontains"
+        field_name="container__name", lookup_expr="icontains"
     )
     types = django_filters.CharFilter(method="filter_type")
     customer = django_filters.CharFilter(
@@ -17,4 +17,4 @@ class ContainerStorageFilter(FilterSet):
 
     def filter_type(self, queryset, name, value):
         values = value.split(",")
-        return queryset.filter(container_location__container__type__in=values)
+        return queryset.filter(container__type__in=values)

@@ -13,22 +13,14 @@ class StorageStatisticsSerializer(serializers.Serializer):
 class ContainerTypeSerializer(serializers.Serializer):
     type = serializers.CharField()
     count = serializers.IntegerField()
-
-
-class CustomerSerializer(serializers.Serializer):
-    customer_name = serializers.CharField()
-    visit_count = serializers.IntegerField()
+    empty_count = serializers.IntegerField()
+    laden_count = serializers.IntegerField()
 
 
 class ContainerStatisticsSerializer(serializers.Serializer):
     common_types = serializers.ListField(child=ContainerTypeSerializer())
 
 
-class CustomerStatisticsSerializer(serializers.Serializer):
-    busiest_customers = serializers.ListField(child=CustomerSerializer())
-
-
 class AllStatisticsSerializer(serializers.Serializer):
     storage = StorageStatisticsSerializer()
     common_types = serializers.ListField(child=ContainerTypeSerializer())
-    busiest_customers = serializers.ListField(child=CustomerSerializer())

@@ -5,7 +5,10 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from apps.containers.models import ContainerStorage
+from apps.core.choices import ContainerType
+from apps.core.models import Container
 from apps.customers.models import Company
+from apps.locations.models import ContainerLocation
 
 
 class TestContainerStorage:
@@ -20,8 +23,18 @@ class TestContainerStorage:
     @pytest.mark.django_db
     def test_container_storage_str_method(self):
         company = Company.objects.create(name="Test Company")
+        container = Container.objects.create(
+            type=ContainerType.TWENTY, name="CONT-TEST"
+        )
+
+        container_location = ContainerLocation.objects.create(
+            container=container, row=1, column_start=1, column_end=1, tier=1
+        )
         storage = ContainerStorage.objects.create(
-            customer=company, entry_time=timezone.now()
+            container=container,
+            container_location=container_location,
+            customer=company,
+            entry_time=timezone.now(),
         )
         assert "Test Company" in str(storage)
         assert "In storage" in str(storage)

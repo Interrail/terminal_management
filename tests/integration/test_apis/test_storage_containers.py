@@ -5,7 +5,9 @@ from django.urls import reverse
 from django.utils import timezone
 from rest_framework import status
 
-from apps.containers.models import Container, ContainerStorage
+from apps.containers.models import ContainerStorage
+from apps.core.choices import ContainerType
+from apps.core.models import Container
 
 
 @pytest.mark.django_db
@@ -13,8 +15,8 @@ class TestContainerStorageRegistration:
     def test_successful_registration(self, api_client, customer, yard):
         url = reverse("container_storage_register")
         data = {
-            "container_name": "CONT19982211",
-            "container_type": Container.ContainerType.FORTY,
+            "container_name": "CONT1998221",
+            "container_type": ContainerType.FORTY,
             "container_location": {
                 "yard_id": yard.id,
                 "row": 2,
@@ -27,9 +29,10 @@ class TestContainerStorageRegistration:
             "notes": "Test registration",
         }
         response = api_client.post(url, data, format="json")
+
         assert response.status_code == status.HTTP_201_CREATED
         assert ContainerStorage.objects.count() == 1
-        assert Container.objects.filter(name="CONT19982211").exists()
+        assert Container.objects.filter(name="CONT1998221").exists()
 
     def test_registration_with_existing_container(
         self,
@@ -64,7 +67,10 @@ class TestContainerStorageRegistration:
         self, api_client, customer, container, container_location, yard
     ):
         ContainerStorage.objects.create(
-            container_location=container_location, customer=customer, is_empty=True
+            container=container,
+            container_location=container_location,
+            customer=customer,
+            is_empty=True,
         )
         url = reverse("container_storage_register")
         data = {
@@ -90,7 +96,7 @@ class TestContainerStorageRegistration:
         url = reverse("container_storage_register")
         data = {
             "container_name": "CONT00319822",
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "container_location": {
                 "yard_id": yard.id,
                 "row": 2,
@@ -108,8 +114,8 @@ class TestContainerStorageRegistration:
         url = reverse("container_storage_register")
         custom_time = timezone.now() - timedelta(days=1)
         data = {
-            "container_name": "CONT00424455",
-            "container_type": Container.ContainerType.FORTY_HIGH_CUBE,
+            "container_name": "CONT0042445",
+            "container_type": ContainerType.FORTY_HIGH_CUBE,
             "container_location": {
                 "yard_id": yard.id,
                 "row": 2,
@@ -123,9 +129,7 @@ class TestContainerStorageRegistration:
         }
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
-        storage = ContainerStorage.objects.get(
-            container_location__container__name="CONT00424455"
-        )
+        storage = ContainerStorage.objects.get(container__name="CONT0042445")
         assert storage.entry_time.isoformat() == custom_time.isoformat()
 
     def test_registration_with_invalid_container_type(self, api_client, customer, yard):
@@ -153,7 +157,7 @@ class TestContainerStorageRegistration:
         url = reverse("container_storage_register")
         data = {
             "container_name": container.name,  # Duplicate name
-            "container_type": Container.ContainerType.FORTY,  # Different type
+            "container_type": ContainerType.FORTY,  # Different type
             "container_location": {
                 "yard_id": yard.id,
                 "row": 1,
@@ -184,7 +188,7 @@ class TestContainerStorageRegistration:
         url = reverse("container_storage_register")
         data = {
             "container_name": "CONT007",
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "container_location": {
                 "yard_id": yard.id,
                 "row": 3,
@@ -206,7 +210,7 @@ class TestContainerStorageRegistration:
         assert response.data["container_location"]["container"]["name"] == "CONT007"
         assert (
             response.data["container_location"]["container"]["type"]
-            == Container.ContainerType.TWENTY
+            == ContainerType.TWENTY
         )
         assert response.data["customer"]["id"] == customer.id
         assert response.data["is_empty"] is True
@@ -230,7 +234,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "container_location": {
                 "yard_id": container_location.yard.id,
                 "row": 2,
@@ -245,13 +249,8 @@ class TestContainerStorageUpdate:
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_200_OK
         container_terminal_visit.refresh_from_db()
-        assert (
-            container_terminal_visit.container_location.container.name == "UPDATEDNAME"
-        )
-        assert (
-            container_terminal_visit.container_location.container.type
-            == Container.ContainerType.TWENTY
-        )
+        assert container_terminal_visit.container.name == "UPDATEDNAME"
+        assert container_terminal_visit.container.type == ContainerType.TWENTY
         assert not container_terminal_visit.is_empty
         assert container_terminal_visit.notes == "Updated notes"
 
@@ -265,7 +264,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": 1,
             "container_name": "TESTCONT",
-            "container_type": Container.ContainerType.FORTY,
+            "container_type": ContainerType.FORTY,
             "container_location": {
                 "yard_id": container_location.yard.id,
                 "row": 4,
@@ -288,7 +287,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": 99999,  # Non-existent container ID
             "container_name": "UPDATEDNAME",
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "container_location": {
                 "yard_id": container_location.yard.id,
                 "row": 2,
@@ -311,7 +310,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "container_location": {
                 "yard_id": container_location.yard.id,
                 "row": 2,
@@ -340,7 +339,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "INVALIDNAMEINVALID",  # Assuming there's validation for container names
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "container_location": {
                 "yard_id": container_location.yard.id,
                 "row": 2,
@@ -369,7 +368,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "customer_id": container_terminal_visit.customer.id,
             "container_location": {
                 "yard_id": container_location.yard.id,
@@ -400,7 +399,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": Container.ContainerType.TWENTY,
+            "container_type": ContainerType.TWENTY,
             "customer_id": container_terminal_visit.customer.id,
             "is_empty": False,
         }
@@ -454,7 +453,7 @@ class TestContainerStorageDelete:
     def test_invalid_terminal_visit_delete(self, api_client, container_terminal_visit):
         url = reverse(
             "container_storage_delete",
-            kwargs={"visit_id": container_terminal_visit.id + 999},
+            kwargs={"visit_id": container_terminal_visit.id + 9999999},
         )
         response = api_client.delete(url)
         assert response.status_code == status.HTTP_404_NOT_FOUND

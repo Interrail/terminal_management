@@ -1,7 +1,8 @@
 import pytest
 from django.core.exceptions import ValidationError
 
-from apps.containers.models import Container
+from apps.core.choices import ContainerType
+from apps.core.models import Container
 from apps.locations.models import Yard, ContainerLocation
 
 
@@ -12,7 +13,7 @@ class TestContainerLocation:
             name="Test Yard", max_rows=5, max_columns=10, max_tiers=3
         )
         container = Container.objects.create(
-            type=Container.ContainerType.TWENTY, name="CONT-TEST"
+            type=ContainerType.TWENTY, name="CONT-TEST"
         )
 
         # Missing row

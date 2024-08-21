@@ -20,14 +20,14 @@ class CompanyService:
         filters = filters or {}
         qs = Company.objects.annotate(
             containers_count=Count("container_visits")
-        ).order_by("id")
+        ).order_by("-id")
         return CompanyFilter(filters, queryset=qs).qs
 
     def get_company_by_id(self, company_id):
         return get_object_or_404(Company, id=company_id)
 
     def get_company_by_name(self, name):
-        return Company.objects.filter(name=name).first()
+        return Company.objects.filter(name__iexact=name).first()
 
     def delete_company(self, company_id):
         company = get_object_or_404(Company, id=company_id)

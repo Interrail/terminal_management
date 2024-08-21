@@ -1,36 +1,44 @@
-from django.urls import path
+from django.urls import path, include
 
-from apps.containers.api import (
-    ContainerDeleteApi,
-    ContainerUpdateApi,
-    ContainerDetailApi,
-    ContainerCreateApi,
-    ContainerListApi,
+from apps.containers.apis.container_storage import (
     ContainerStorageRegisterApi,
     ContainerStorageListApi,
-    ContainerStorageStatisticsApi,
     ContainerStorageUpdateApi,
     ContainerStorageDeleteApi,
+    ContainerStorageListByCustomerApi,
+)
+from apps.containers.apis.container_storage_files import (
     ContainerStorageAddImageListApi,
     ContainerStorageImageDeleteApi,
     ContainerStorageAddDocumentListApi,
     ContainerStorageDocumentDeleteApi,
 )
 
+files_patterns = [
+    path(
+        "container_visit/<int:visit_id>/image/create/",
+        ContainerStorageAddImageListApi.as_view(),
+        name="container_storage_image",
+    ),
+    path(
+        "container_visit/image/<int:image_id>/delete/",
+        ContainerStorageImageDeleteApi.as_view(),
+        name="container_storage_image_delete",
+    ),
+    path(
+        "container_visit/<int:visit_id>/document/create/",
+        ContainerStorageAddDocumentListApi.as_view(),
+        name="container_storage_document",
+    ),
+    path(
+        "container_visit/document/<int:document_id>/delete/",
+        ContainerStorageDocumentDeleteApi.as_view(),
+        name="container_storage_document_delete",
+    ),
+]
+
+statistics_patterns = []
 urlpatterns = [
-    path("list/", ContainerListApi.as_view(), name="container_list"),
-    path("create/", ContainerCreateApi.as_view(), name="container_create"),
-    path("<int:container_id>/", ContainerDetailApi.as_view(), name="container_detail"),
-    path(
-        "<int:container_id>/update/",
-        ContainerUpdateApi.as_view(),
-        name="container_update",
-    ),
-    path(
-        "<int:container_id>/delete/",
-        ContainerDeleteApi.as_view(),
-        name="container_delete",
-    ),
     path(
         "container_visit_register/",
         ContainerStorageRegisterApi.as_view(),
@@ -52,28 +60,10 @@ urlpatterns = [
         name="container_storage_register_by_id",
     ),
     path(
-        "container_statistics/",
-        ContainerStorageStatisticsApi.as_view(),
-        name="container_statistics",
+        "container_visit_list/<int:customer_id>/",
+        ContainerStorageListByCustomerApi.as_view(),
+        name="container_storage_register_by_customer",
     ),
-    path(
-        "container_visit/<int:visit_id>/image/create/",
-        ContainerStorageAddImageListApi.as_view(),
-        name="container_storage_image",
-    ),
-    path(
-        "container_visit/image/<int:image_id>/delete/",
-        ContainerStorageImageDeleteApi.as_view(),
-        name="container_storage_image_delete",
-    ),
-    path(
-        "container_visit/<int:visit_id>/document/create/",
-        ContainerStorageAddDocumentListApi.as_view(),
-        name="container_storage_document",
-    ),
-    path(
-        "container_visit/document/<int:document_id>/delete/",
-        ContainerStorageDocumentDeleteApi.as_view(),
-        name="container_storage_document_delete",
-    ),
+    path("container_statistics/", include(statistics_patterns)),
+    path("files/", include(files_patterns)),
 ]

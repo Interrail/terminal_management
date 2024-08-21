@@ -30,6 +30,8 @@ urlpatterns = [
     path("customers/", include("apps.customers.urls")),
     path("containers/", include("apps.containers.urls")),
     path("locations/", include("apps.locations.urls")),
+    path("finance/", include("apps.finance.urls")),
+    path("core/", include("apps.core.urls")),
 ]
 urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
 if settings.DEBUG:
