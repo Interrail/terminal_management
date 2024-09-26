@@ -1,6 +1,3 @@
-import datetime
-
-from django.utils.dateparse import parse_datetime
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import serializers, status
 from rest_framework.response import Response
@@ -9,7 +6,7 @@ from rest_framework.views import APIView
 from apps.containers.services.container_storage import (
     ContainerStorageService,
 )
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize, TransportType, ContainerState
 from apps.core.models import Container
 from apps.core.pagination import LimitOffsetPagination, get_paginated_response
 from apps.core.utils import inline_serializer
@@ -19,19 +16,32 @@ from apps.customers.models import Company
 class ContainerStorageRegisterApi(APIView):
     class ContainerStorageRegisterSerializer(serializers.Serializer):
         container_name = serializers.CharField(max_length=11)
-        container_type = serializers.ChoiceField(choices=ContainerType.choices)
-        container_location = inline_serializer(
-            fields={
-                "yard_id": serializers.IntegerField(),
-                "row": serializers.IntegerField(),
-                "column_start": serializers.IntegerField(),
-                "tier": serializers.IntegerField(),
-            }
+        container_size = serializers.ChoiceField(
+            required=True, choices=ContainerSize.choices
         )
-        customer_id = serializers.IntegerField()
-        is_empty = serializers.BooleanField()
-        entry_time = serializers.DateTimeField(required=False)
-        notes = serializers.CharField(required=False, allow_blank=True)
+        container_state = serializers.ChoiceField(
+            required=True, choices=ContainerState.choices
+        )
+        container_owner = serializers.CharField(required=True, allow_blank=True)
+        product_name = serializers.CharField(
+            required=True, allow_null=True, allow_blank=True
+        )
+        transport_type = serializers.ChoiceField(
+            required=True, choices=TransportType.choices
+        )
+        transport_number = serializers.CharField(required=True, allow_blank=True)
+        company_id = serializers.IntegerField(required=True)
+        entry_time = serializers.DateTimeField(required=True)
+        notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+        active_services = serializers.ListField(
+            child=serializers.IntegerField(),
+            required=True,
+        )
+
+        def validate_container_size(self, container_size: str) -> str:
+            if container_size not in dict(ContainerSize.choices).keys():
+                raise serializers.ValidationError("Invalid container size")
+            return container_size
 
         def validate_container_name(self, container_name: str) -> str:
             container = Container.objects.filter(name=container_name).first()
@@ -41,37 +51,32 @@ class ContainerStorageRegisterApi(APIView):
                 )
             return container_name
 
-        def validate_customer_id(self, customer_id: int) -> int:
-            if not Company.objects.filter(id=customer_id).first():
+        def validate_company_id(self, company_id: int) -> int:
+            if not Company.objects.filter(id=company_id).first():
                 raise serializers.ValidationError("Customer does not exist")
-            return customer_id
+            return company_id
 
     class ContainerStorageRegisterOutputSerializer(serializers.Serializer):
-        container_location = inline_serializer(
+        id = serializers.IntegerField(read_only=True)
+        container = inline_serializer(
             fields={
                 "id": serializers.IntegerField(read_only=True),
-                "name": serializers.CharField(source="yard__name", read_only=True),
-                "container": inline_serializer(
-                    fields={
-                        "id": serializers.IntegerField(read_only=True),
-                        "name": serializers.CharField(read_only=True),
-                        "type": serializers.CharField(read_only=True),
-                    }
-                ),
-                "row": serializers.IntegerField(read_only=True),
-                "column_start": serializers.IntegerField(read_only=True),
-                "column_end": serializers.IntegerField(read_only=True),
-                "tier": serializers.IntegerField(read_only=True),
+                "name": serializers.CharField(read_only=True),
+                "size": serializers.CharField(read_only=True),
             }
         )
+        container_state = serializers.CharField(read_only=True)
+        transport_type = serializers.CharField(read_only=True)
+        transport_number = serializers.CharField(read_only=True)
+        product_name = serializers.CharField(read_only=True)
+        container_owner = serializers.CharField(read_only=True)
 
-        customer = inline_serializer(
+        company = inline_serializer(
             fields={
                 "id": serializers.IntegerField(read_only=True),
                 "name": serializers.CharField(read_only=True),
             }
         )
-        is_empty = serializers.BooleanField(read_only=True)
         entry_time = serializers.DateTimeField(read_only=True)
         notes = serializers.CharField(read_only=True)
 
@@ -84,7 +89,7 @@ class ContainerStorageRegisterApi(APIView):
         serializer = self.ContainerStorageRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         container = ContainerStorageService().register_container_entry(
-            **serializer.validated_data
+            serializer.validated_data
         )
         return Response(
             self.ContainerStorageRegisterOutputSerializer(container).data,
@@ -94,73 +99,52 @@ class ContainerStorageRegisterApi(APIView):
 
 class ContainerStorageUpdateApi(APIView):
     class ContainerStorageUpdateSerializer(serializers.Serializer):
-        container_id = serializers.IntegerField()
-        container_name = serializers.CharField(max_length=12)
-        container_type = serializers.ChoiceField(
-            choices=ContainerType.choices,
+        container_name = serializers.CharField(max_length=11, required=True)
+        container_size = serializers.ChoiceField(
+            choices=ContainerSize.choices, required=True
         )
-        container_location = (
-            inline_serializer(
-                fields={
-                    "yard_id": serializers.IntegerField(),
-                    "row": serializers.IntegerField(),
-                    "column_start": serializers.IntegerField(),
-                    "column_end": serializers.IntegerField(),
-                    "tier": serializers.IntegerField(),
-                },
-            ),
+        container_state = serializers.ChoiceField(
+            choices=ContainerState.choices, required=False
         )
-        customer_id = serializers.IntegerField()
-        is_empty = serializers.BooleanField()
+        container_owner = serializers.CharField(required=False)
+        transport_type = serializers.ChoiceField(
+            choices=TransportType.choices, required=False
+        )
+        product_name = serializers.CharField(
+            required=False, allow_blank=True, allow_null=True
+        )
+        transport_number = serializers.CharField(required=False)
+        exit_transport_type = serializers.ChoiceField(
+            choices=TransportType.choices, required=False, allow_blank=True
+        )
+        exit_transport_number = serializers.CharField(
+            required=False, allow_blank=True, allow_null=True
+        )
+        company_id = serializers.IntegerField(required=True)
         entry_time = serializers.DateTimeField(required=False)
-        exit_time = serializers.DateTimeField(required=False)
-        notes = serializers.CharField(required=False)
+        exit_time = serializers.DateTimeField(required=False, allow_null=True)
+        notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+        available_services = serializers.ListField(
+            child=serializers.IntegerField(),
+            required=False,
+        )
+        dispatch_services = serializers.ListField(
+            child=serializers.IntegerField(),
+            required=False,
+        )
 
-        def validate_customer_id(self, customer_id: int) -> int:
-            if not Company.objects.filter(id=customer_id).first():
+        def validate_company_id(self, value):
+            if not Company.objects.filter(id=value).exists():
                 raise serializers.ValidationError("Customer does not exist")
-            return customer_id
-
-        def validate_exit_time(self, exit_time: datetime) -> datetime:
-            entry_time = self.initial_data.get("entry_time")
-
-            # Convert entry_time to datetime if it's a string
-            if isinstance(entry_time, str):
-                entry_time = parse_datetime(entry_time)
-
-            if entry_time and exit_time and exit_time <= entry_time:
-                raise serializers.ValidationError("Exit time must be after entry time")
-
-            return exit_time
+            return value
 
     class ContainerStorageUpdateOutputSerializer(serializers.Serializer):
-        container_location = (
-            inline_serializer(
-                fields={
-                    "yard_id": serializers.IntegerField(),
-                    "row": serializers.IntegerField(),
-                    "column_start": serializers.IntegerField(),
-                    "column_end": serializers.IntegerField(),
-                    "tier": serializers.IntegerField(),
-                    "container": inline_serializer(
-                        fields={
-                            "id": serializers.IntegerField(read_only=True),
-                            "name": serializers.CharField(read_only=True),
-                            "type": serializers.CharField(read_only=True),
-                        }
-                    ),
-                },
-            ),
-        )
-        customer = inline_serializer(
+        company = inline_serializer(
             fields={
                 "id": serializers.IntegerField(read_only=True),
                 "name": serializers.CharField(read_only=True),
             }
         )
-        is_empty = serializers.BooleanField(read_only=True)
-        entry_time = serializers.DateTimeField(read_only=True)
-        notes = serializers.CharField(read_only=True)
 
     @extend_schema(
         summary="Update container visit",
@@ -200,29 +184,37 @@ class ContainerStorageListApi(APIView):
         types = serializers.CharField(
             required=False,
         )
-        customer = serializers.CharField(required=False)
-        is_empty = serializers.BooleanField(required=False, allow_null=True)
-        container = serializers.CharField(required=False)
-        status = serializers.ChoiceField(
-            choices=["in_terminal", "left_terminal", "all"],
-            required=False,
-            default="all",
+        company_name = serializers.CharField(required=False)
+        container_name = serializers.CharField(required=False)
+        container_size = serializers.CharField(required=False)
+        container_state = serializers.ChoiceField(
+            choices=ContainerState.choices, required=False
         )
-        entry_time = serializers.DateField(required=False)
+        product_name = serializers.CharField(required=False)
+        container_owner = serializers.CharField(required=False)
+        transport_type = serializers.CharField(required=False)
+        transport_number = serializers.CharField(required=False)
+        exit_transport_type = serializers.CharField(required=False)
+        exit_transport_number = serializers.CharField(required=False)
+        active_services = serializers.CharField(required=False)
+        dispatch_services = serializers.CharField(required=False)
+        exit_time = serializers.CharField(required=False)
+        entry_time = serializers.CharField(required=False)
         storage_days = serializers.IntegerField(required=False)
         notes = serializers.CharField(required=False)
 
     class ContainerStorageListSerializer(serializers.Serializer):
+        id = serializers.IntegerField(read_only=True)
         container = inline_serializer(
             fields={
                 "id": serializers.IntegerField(read_only=True),
                 "name": serializers.CharField(read_only=True),
-                "type": serializers.CharField(
-                    source="get_type_display", read_only=True
+                "size": serializers.CharField(
+                    source="get_size_display", read_only=True
                 ),
             }
         )
-        customer = inline_serializer(
+        company = inline_serializer(
             fields={
                 "id": serializers.IntegerField(read_only=True),
                 "name": serializers.CharField(read_only=True),
@@ -236,6 +228,12 @@ class ContainerStorageListApi(APIView):
             },
             many=True,
         )
+        product_name = serializers.CharField(read_only=True)
+        container_owner = serializers.CharField(read_only=True)
+        transport_type = serializers.CharField(read_only=True)
+        transport_number = serializers.CharField(read_only=True)
+        exit_transport_type = serializers.CharField(read_only=True)
+        exit_transport_number = serializers.CharField(read_only=True)
         documents = inline_serializer(
             fields={
                 "id": serializers.IntegerField(read_only=True),
@@ -245,14 +243,62 @@ class ContainerStorageListApi(APIView):
             many=True,
         )
 
-        is_empty = serializers.BooleanField(read_only=True)
+        container_state = serializers.CharField(read_only=True)
         entry_time = serializers.DateTimeField(read_only=True)
         exit_time = serializers.DateTimeField(read_only=True)
         storage_days = serializers.IntegerField(read_only=True)
         notes = serializers.CharField(read_only=True)
-        total_storage_cost = serializers.DecimalField(
-            max_digits=10, decimal_places=2, read_only=True
+        free_days = serializers.IntegerField(
+            read_only=True, source="contract.free_days"
         )
+        active_services = serializers.SerializerMethodField(
+            method_name="get_active_services"
+        )
+        dispatch_services = serializers.SerializerMethodField(
+            method_name="get_dispatch_services"
+        )
+
+        def get_active_services(self, obj):
+            active_services = []
+            for service in obj.active_services.all():
+                active_services.append(
+                    {
+                        "id": service.id,
+                        "name": service.service.name,
+                        "description": service.service.description,
+                        "container_size": service.service.container_size,
+                        "container_state": service.service.container_state,
+                        "service_type": {
+                            "id": service.service.service_type.id,
+                            "name": service.service.service_type.name,
+                            "unit_of_measure": service.service.service_type.unit_of_measure,
+                        },
+                        "base_price": service.service.base_price,
+                        "price": service.price,
+                    }
+                )
+            return active_services
+
+        def get_dispatch_services(self, obj):
+            dispatch_services = []
+            for service in obj.dispatch_services.all():
+                dispatch_services.append(
+                    {
+                        "id": service.id,
+                        "name": service.service.name,
+                        "description": service.service.description,
+                        "container_size": service.service.container_size,
+                        "container_state": service.service.container_state,
+                        "service_type": {
+                            "id": service.service.service_type.id,
+                            "name": service.service.service_type.name,
+                            "unit_of_measure": service.service.service_type.unit_of_measure,
+                        },
+                        "base_price": service.service.base_price,
+                        "price": service.price,
+                    }
+                )
+            return dispatch_services
 
     @extend_schema(
         summary="List container visits",
@@ -281,6 +327,138 @@ class ContainerStorageListApi(APIView):
         )
 
 
+class ContainerStorageDetailApi(APIView):
+    class ContainerStorageDetailSerializer(serializers.Serializer):
+        id = serializers.IntegerField(read_only=True)
+        container = inline_serializer(
+            fields={
+                "id": serializers.IntegerField(read_only=True),
+                "name": serializers.CharField(read_only=True),
+                "size": serializers.CharField(read_only=True),
+            }
+        )
+        company = inline_serializer(
+            fields={
+                "id": serializers.IntegerField(read_only=True),
+                "name": serializers.CharField(read_only=True),
+            }
+        )
+        images = inline_serializer(
+            fields={
+                "id": serializers.IntegerField(read_only=True),
+                "image": serializers.ImageField(read_only=True),
+                "name": serializers.CharField(read_only=True),
+            },
+            many=True,
+        )
+        product_name = serializers.CharField(read_only=True)
+        container_owner = serializers.CharField(read_only=True)
+        transport_type = serializers.CharField(read_only=True)
+        transport_number = serializers.CharField(read_only=True)
+        exit_transport_type = serializers.CharField(read_only=True)
+        exit_transport_number = serializers.CharField(read_only=True)
+        documents = inline_serializer(
+            fields={
+                "id": serializers.IntegerField(read_only=True),
+                "document": serializers.FileField(read_only=True),
+                "name": serializers.CharField(read_only=True),
+            },
+            many=True,
+        )
+
+        container_state = serializers.CharField(read_only=True)
+        entry_time = serializers.DateTimeField(read_only=True)
+        exit_time = serializers.DateTimeField(read_only=True)
+        storage_days = serializers.IntegerField(read_only=True)
+        notes = serializers.CharField(read_only=True)
+        free_days = serializers.IntegerField(
+            read_only=True, source="contract.free_days"
+        )
+        active_services = serializers.SerializerMethodField(
+            method_name="get_active_services"
+        )
+        dispatch_services = serializers.SerializerMethodField(
+            method_name="get_dispatch_services"
+        )
+
+        def get_active_services(self, obj):
+            active_services = []
+            for service in obj.active_services.all():
+                active_services.append(
+                    {
+                        "id": service.id,
+                        "name": service.service.name,
+                        "description": service.service.description,
+                        "container_size": service.service.container_size,
+                        "container_state": service.service.container_state,
+                        "service_type": {
+                            "id": service.service.service_type.id,
+                            "name": service.service.service_type.name,
+                            "unit_of_measure": service.service.service_type.unit_of_measure,
+                        },
+                        "base_price": service.service.base_price,
+                        "price": service.price,
+                    }
+                )
+            return active_services
+
+        def get_dispatch_services(self, obj):
+            dispatch_services = []
+            for service in obj.dispatch_services.all():
+                dispatch_services.append(
+                    {
+                        "id": service.id,
+                        "name": service.service.name,
+                        "description": service.service.description,
+                        "container_size": service.service.container_size,
+                        "container_state": service.service.container_state,
+                        "service_type": {
+                            "id": service.service.service_type.id,
+                            "name": service.service.service_type.name,
+                            "unit_of_measure": service.service.service_type.unit_of_measure,
+                        },
+                        "base_price": service.service.base_price,
+                        "price": service.price,
+                    }
+                )
+            return dispatch_services
+
+    def get(self, request, visit_id):
+        container_storage_service = ContainerStorageService()
+        container_storage = container_storage_service.get_container_visit(visit_id)
+        return Response(
+            self.ContainerStorageDetailSerializer(container_storage).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ContainerStorageDispatchApi(APIView):
+    class ContainerStorageExitSerializer(serializers.Serializer):
+        id = serializers.IntegerField(read_only=True)
+        exit_time = serializers.DateTimeField(required=True)
+        exit_transport_type = serializers.ChoiceField(
+            choices=TransportType.choices, required=True
+        )
+        exit_transport_number = serializers.CharField(required=True)
+        dispatch_services = serializers.ListField(
+            child=serializers.IntegerField(),
+            required=True,
+        )
+
+    def put(self, request, visit_id):
+        serializer = self.ContainerStorageExitSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        container_storage = ContainerStorageService().dispatch_container_visit(
+            visit_id, serializer.validated_data
+        )
+        return Response(
+            ContainerStorageDetailApi.ContainerStorageDetailSerializer(
+                container_storage
+            ).data,
+            status=status.HTTP_200_OK,
+        )
+
+
 class ContainerStorageListByCustomerApi(APIView):
     class Pagination(LimitOffsetPagination):
         default_limit = 10
@@ -290,7 +468,7 @@ class ContainerStorageListByCustomerApi(APIView):
         types = serializers.CharField(
             required=False,
         )
-        customer = serializers.CharField(required=False)
+        company = serializers.CharField(required=False)
         is_empty = serializers.BooleanField(required=False, allow_null=True)
         container = serializers.CharField(required=False)
         status = serializers.ChoiceField(
@@ -312,7 +490,7 @@ class ContainerStorageListByCustomerApi(APIView):
                 ),
             }
         )
-        customer = inline_serializer(
+        company = inline_serializer(
             fields={
                 "id": serializers.IntegerField(read_only=True),
                 "name": serializers.CharField(read_only=True),
@@ -343,6 +521,20 @@ class ContainerStorageListByCustomerApi(APIView):
         total_storage_cost = serializers.DecimalField(
             max_digits=10, decimal_places=2, read_only=True
         )
+        active_services = inline_serializer(
+            fields={
+                "id": serializers.IntegerField(),
+                "name": serializers.CharField(source="service.name"),
+                "service_type": serializers.CharField(
+                    source="service.service_type.name"
+                ),
+                "container_size": serializers.CharField(
+                    source="service.container_size"
+                ),
+                "price": serializers.DecimalField(max_digits=10, decimal_places=2),
+            },
+            many=True,
+        )
 
     @extend_schema(
         summary="List container visits",
@@ -356,12 +548,13 @@ class ContainerStorageListByCustomerApi(APIView):
             )
         ],
     )
-    def get(self, request, customer_id):
+    def get(self, request, company_id):
         filters_serializer = self.FilterSerializer(data=request.query_params)
         filters_serializer.is_valid(raise_exception=True)
+        container_storage_service = ContainerStorageService()
         container_storages = (
-            ContainerStorageService().get_all_containers_visits_by_customer(
-                customer_id=customer_id, filters=filters_serializer.validated_data
+            container_storage_service.get_all_containers_visits_by_company(
+                company_id=company_id, filters=filters_serializer.validated_data
             )
         )
         return get_paginated_response(

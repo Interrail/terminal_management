@@ -32,8 +32,8 @@ def get_paginated_response(
 
 
 class LimitOffsetPagination(_LimitOffsetPagination):
-    default_limit: int = 10
-    max_limit: int = 50
+    default_limit: int = 100  # Set to 100 instead of 10
+    max_limit: int = 100  # Keep this consistent
 
     def get_paginated_data(self, data: List[Dict[str, Any]]) -> OrderedDict:
         return OrderedDict(
@@ -48,10 +48,6 @@ class LimitOffsetPagination(_LimitOffsetPagination):
         )
 
     def get_paginated_response(self, data: List[Dict[str, Any]]) -> Response:
-        """
-        We redefine this method in order to return `limit` and `offset`.
-        This is used by the frontend to construct the pagination itself.
-        """
         return Response(
             OrderedDict(
                 [

@@ -3,6 +3,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.choices import TransportType, ContainerState
 from apps.core.models import BaseModel, Container
 
 
@@ -10,20 +11,49 @@ class ContainerStorage(BaseModel):
     container = models.ForeignKey(
         Container, on_delete=models.CASCADE, related_name="storages"
     )
+
     container_location = models.ForeignKey(
         "locations.ContainerLocation",
         on_delete=models.SET_NULL,
         related_name="terminal_visits",
         null=True,
+        blank=True,
     )
-    customer = models.ForeignKey(
+    container_state = models.CharField(choices=ContainerState.choices, max_length=10)
+    company = models.ForeignKey(
         "customers.Company", on_delete=models.CASCADE, related_name="container_visits"
     )
+    product_name = models.CharField(max_length=255, blank=True, default="")
+    container_owner = models.CharField(max_length=255, blank=True, default="")
+
+    transport_type = models.CharField(
+        max_length=255, blank=True, choices=TransportType.choices
+    )
+    transport_number = models.CharField(max_length=255, blank=True, default="")
     entry_time = models.DateTimeField(default=timezone.now)
+
+    exit_transport_type = models.CharField(
+        max_length=255, blank=True, choices=TransportType.choices, null=True
+    )
+    exit_transport_number = models.CharField(
+        max_length=255, blank=True, default="", null=True
+    )
     exit_time = models.DateTimeField(null=True, blank=True)
 
     notes = models.TextField(blank=True, default="")
-    is_empty = models.BooleanField(default=False)
+    contract = models.ForeignKey(
+        "customers.CompanyContract",
+        on_delete=models.SET_NULL,
+        related_name="container_visits",
+        null=True,
+        blank=True,
+    )
+    active_services = models.ManyToManyField(
+        "customers.ContractService", related_name="containers", blank=True
+    )
+    dispatch_services = models.ManyToManyField(
+        "customers.ContractService", related_name="dispatched_containers", blank=True
+    )
 
     class Meta:
         db_table = "container_storage"
@@ -33,19 +63,14 @@ class ContainerStorage(BaseModel):
 
     def __str__(self):
         status = "In storage" if self.exit_time is None else "Exited"
-        return f" - {self.customer.name} - {status} (Entered: {self.entry_time})"
+        return f" - {self.company.name} - {status} (Entered: {self.entry_time})"
 
     def clean(self):
-        if self.exit_time and self.exit_time <= self.entry_time:
+        if self.exit_time and self.exit_time < self.entry_time:
             raise ValidationError(_("Exit time must be after entry time."))
-        if (
-            self.container_location
-            and self.container != self.container_location.container
-        ):
-            raise ValidationError("Container mismatch between storage and location.")
 
     def save(self, *args, **kwargs):
-        self.full_clean()
+        self.clean()
         if self.container_location:
             self.container = self.container_location.container
         super().save(*args, **kwargs)

@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from apps.containers.models import ContainerStorage
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize
 from apps.core.models import Container
 from apps.customers.models import Company
 from apps.locations.models import ContainerLocation
@@ -24,7 +24,7 @@ class TestContainerStorage:
     def test_container_storage_str_method(self):
         company = Company.objects.create(name="Test Company")
         container = Container.objects.create(
-            type=ContainerType.TWENTY, name="CONT-TEST"
+            size=ContainerSize.TWENTY, name="CONT-TEST"
         )
 
         container_location = ContainerLocation.objects.create(
@@ -33,7 +33,7 @@ class TestContainerStorage:
         storage = ContainerStorage.objects.create(
             container=container,
             container_location=container_location,
-            customer=company,
+            company=company,
             entry_time=timezone.now(),
         )
         assert "Test Company" in str(storage)

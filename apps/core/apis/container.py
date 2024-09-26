@@ -3,9 +3,9 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize
 from apps.core.pagination import LimitOffsetPagination, get_paginated_response
-from apps.core.services import ContainerService
+from apps.core.services.container import ContainerService
 
 
 class ContainerListApi(APIView):
@@ -15,7 +15,7 @@ class ContainerListApi(APIView):
 
     class FilterSerializer(serializers.Serializer):
         name = serializers.CharField(required=False)
-        type = serializers.ChoiceField(choices=ContainerType.choices, required=False)
+        type = serializers.ChoiceField(choices=ContainerSize.choices, required=False)
 
     class ContainerListSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
@@ -37,7 +37,7 @@ class ContainerListApi(APIView):
 class ContainerCreateApi(APIView):
     class ContainerCreateSerializer(serializers.Serializer):
         name = serializers.CharField(max_length=11)
-        type = serializers.ChoiceField(choices=ContainerType.choices)
+        size = serializers.ChoiceField(choices=ContainerSize.choices)
 
         def validate_name(self, value):
             if ContainerService().exists_container(value):
@@ -63,7 +63,7 @@ class ContainerDetailApi(APIView):
     class ContainerDetailSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
         name = serializers.CharField(read_only=True)
-        type = serializers.CharField(read_only=True, source="get_type_display")
+        size = serializers.CharField(read_only=True, source="get_size_display")
 
     @extend_schema(summary="Get container detail", responses=ContainerDetailSerializer)
     def get(self, request, container_id):
@@ -77,11 +77,11 @@ class ContainerDetailApi(APIView):
 class ContainerUpdateApi(APIView):
     class ContainerUpdateSerializer(serializers.Serializer):
         name = serializers.CharField(max_length=12)
-        type = serializers.ChoiceField(choices=ContainerType.choices)
+        size = serializers.ChoiceField(choices=ContainerSize.choices)
 
     class ContainerUpdateOutputSerializer(serializers.Serializer):
         name = serializers.CharField(max_length=12)
-        type = serializers.ChoiceField(choices=ContainerType.choices)
+        size = serializers.ChoiceField(choices=ContainerSize.choices)
 
     @extend_schema(
         summary="Update container",

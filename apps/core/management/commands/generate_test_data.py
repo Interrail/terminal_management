@@ -3,7 +3,7 @@ import random
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize
 from apps.core.factories import (
     CompanyFactory,
     ContainerFactory,
@@ -106,7 +106,7 @@ class Command(BaseCommand):
 
     def create_price_lists(self, companies):
         for company in companies:
-            for container_type in ContainerType.values:
+            for container_type in ContainerSize.values:
                 for is_empty in [True, False]:
                     CustomerStorageCostFactory(
                         customer=company,
@@ -127,7 +127,7 @@ class Command(BaseCommand):
         while containers_to_create > 0:
             row = random.randint(0, yard.max_rows - 1)
             col = random.randint(0, yard.max_columns - 1)
-            container_type = random.choice(ContainerType.values)
+            container_type = random.choice(ContainerSize.values)
 
             columns_needed = 2 if container_type in ["40", "40HC", "45"] else 1
 

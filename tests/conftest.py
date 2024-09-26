@@ -6,9 +6,10 @@ from apps.containers.models import (
     ContainerDocument,
     ContainerImage,
 )
+from apps.core.choices import ContainerSize, ContainerState, MeasurementUnit
 from apps.core.models import Container
-from apps.core.choices import ContainerType
-from apps.customers.models import Company
+from apps.core.models import TerminalService, TerminalServiceType
+from apps.customers.models import Company, CompanyContract, ContractService
 from apps.locations.models import Yard, ContainerLocation
 from apps.users.models import CustomUser
 
@@ -52,17 +53,17 @@ def obtain_jwt_token(api_client, user):
 
 @pytest.fixture
 def container():
-    return Container.objects.create(name="ABCD1998028", type=ContainerType.TWENTY)
+    return Container.objects.create(name="ABCD1998028", size=ContainerSize.TWENTY)
 
 
 @pytest.fixture
-def customer():
+def company():
     return Company.objects.create(name="Test Company", address="Test Address")
 
 
 @pytest.fixture
 def container_location(container, yard):
-    if container.type == ContainerType.TWENTY:
+    if container.size == ContainerSize.TWENTY:
         return ContainerLocation.objects.create(
             container=container,
             yard=yard,
@@ -83,13 +84,13 @@ def container_location(container, yard):
 
 
 @pytest.fixture
-def container_terminal_visit(container, customer, container_location):
+def container_terminal_visit(container, company, container_location):
     return ContainerStorage.objects.create(
         container=container,
         container_location=container_location,
-        customer=customer,
+        company=company,
         entry_time="2024-01-01T00:00:00Z",
-        is_empty=False,
+        container_state=ContainerState.LOADED,
     )
 
 
@@ -104,4 +105,62 @@ def container_document(container_terminal_visit):
 def container_image(container_terminal_visit):
     return ContainerImage.objects.create(
         image="test_image.jpg", container=container_terminal_visit
+    )
+
+
+@pytest.fixture
+def service_type():
+    return TerminalServiceType.objects.create(
+        name="Test Service Type",
+        unit_of_measure=MeasurementUnit.UNIT,
+    )
+
+
+@pytest.fixture
+def service(service_type):
+    return TerminalService.objects.create(
+        name="Test Service",
+        service_type=service_type,
+        container_size=ContainerSize.TWENTY,
+        container_state=ContainerState.LOADED,
+        base_price=300,
+    )
+
+
+@pytest.fixture
+def contract(company):
+    return CompanyContract.objects.create(
+        company=company,
+        name="Test Contract",
+        start_date="2024-01-01",
+        end_date="2024-12-31",
+        is_active=True,
+    )
+
+
+@pytest.fixture
+def contract_service(contract, service):
+    return ContractService.objects.create(
+        contract=contract,
+        service=service,
+        price=50,
+    )
+
+
+@pytest.fixture
+def terminal_service_type():
+    return TerminalServiceType.objects.create(
+        name="Test Service Type",
+        unit_of_measure=MeasurementUnit.UNIT,
+    )
+
+
+@pytest.fixture
+def terminal_service(terminal_service_type):
+    return TerminalService.objects.create(
+        name="Test Service",
+        service_type=terminal_service_type,
+        container_size=ContainerSize.TWENTY,
+        container_state=ContainerState.LOADED,
+        base_price=100,
     )

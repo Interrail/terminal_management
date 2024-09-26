@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize
 from apps.core.models import Container
 
 
@@ -24,7 +24,7 @@ class TestContainerAPI:
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_create")
         print(url)
-        data = {"name": "CONT-003", "type": ContainerType.FORTY}
+        data = {"name": "CONT-003", "size": ContainerSize.FORTY}
         response = api_client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
@@ -37,7 +37,7 @@ class TestContainerAPI:
         access_token = obtain_jwt_token["access"]
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_create")
-        data = {"name": container.name, "type": ContainerType.FORTY}
+        data = {"name": container.name, "size": ContainerSize.FORTY}
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -48,13 +48,13 @@ class TestContainerAPI:
         response = api_client.get(url)
         assert response.status_code == status.HTTP_200_OK
         assert response.data["name"] == container.name
-        assert response.data["type"] == container.get_type_display()
+        assert response.data["size"] == container.get_size_display()
 
     def test_container_update(self, api_client, obtain_jwt_token, container):
         access_token = obtain_jwt_token["access"]
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_update", kwargs={"container_id": container.id})
-        data = {"name": "CONT-UPDATED", "type": ContainerType.FORTY}
+        data = {"name": "CONT-UPDATED", "size": ContainerSize.FORTY}
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_200_OK
         assert response.data["name"] == "CONT-UPDATED"
@@ -78,7 +78,7 @@ class TestContainerAPI:
         access_token = obtain_jwt_token["access"]
         api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_update", kwargs={"container_id": 9999999})
-        data = {"name": "CONT-UPDATED", "type": ContainerType.FORTY}
+        data = {"name": "CONT-UPDATED", "size": ContainerSize.FORTY}
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 

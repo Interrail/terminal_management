@@ -79,6 +79,19 @@ class CompanyListApi(APIView):
         name = serializers.CharField(read_only=True)
         address = serializers.CharField(read_only=True)
         containers_count = serializers.IntegerField(read_only=True)
+        active_contract = serializers.SerializerMethodField("get_active_contract")
+
+        def get_active_contract(self, obj):
+            if hasattr(obj, "active_contract_list") and obj.active_contract_list:
+                contract = obj.active_contract_list[0]
+                return {
+                    "id": contract.id,
+                    "name": contract.name,
+                    "start_date": contract.start_date,
+                    "end_date": contract.end_date,
+                    "free_days": contract.free_days,
+                }
+            return None
 
     @extend_schema(summary="List companies", responses=CompanyListOutputSerializer)
     def get(self, request):

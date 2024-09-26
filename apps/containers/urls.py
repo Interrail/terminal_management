@@ -6,18 +6,25 @@ from apps.containers.apis.container_storage import (
     ContainerStorageUpdateApi,
     ContainerStorageDeleteApi,
     ContainerStorageListByCustomerApi,
+    ContainerStorageDetailApi,
+    ContainerStorageDispatchApi,
 )
 from apps.containers.apis.container_storage_files import (
-    ContainerStorageAddImageListApi,
+    ContainerStorageAddImageApi,
     ContainerStorageImageDeleteApi,
-    ContainerStorageAddDocumentListApi,
+    ContainerStorageAddDocumentApi,
     ContainerStorageDocumentDeleteApi,
+    ContainerStorageImageDownloadApi,
+    ContainerStorageDocumentDownloadApi,
+)
+from apps.containers.apis.container_storage_statistics import (
+    ContainerStorageStatisticsApi,
 )
 
 files_patterns = [
     path(
         "container_visit/<int:visit_id>/image/create/",
-        ContainerStorageAddImageListApi.as_view(),
+        ContainerStorageAddImageApi.as_view(),
         name="container_storage_image",
     ),
     path(
@@ -27,22 +34,43 @@ files_patterns = [
     ),
     path(
         "container_visit/<int:visit_id>/document/create/",
-        ContainerStorageAddDocumentListApi.as_view(),
-        name="container_storage_document",
+        ContainerStorageAddDocumentApi.as_view(),
+        name="container_storage_document_create",
     ),
     path(
         "container_visit/document/<int:document_id>/delete/",
         ContainerStorageDocumentDeleteApi.as_view(),
         name="container_storage_document_delete",
     ),
+    path(
+        "container_visit/<int:visit_id>/images/download/",
+        ContainerStorageImageDownloadApi.as_view(),
+        name="container_storage_document",
+    ),
+    path(
+        "container_visit/<int:visit_id>/documents/download/",
+        ContainerStorageDocumentDownloadApi.as_view(),
+        name="container_storage_document",
+    ),
 ]
 
-statistics_patterns = []
+statistics_patterns = [
+    path(
+        "",
+        ContainerStorageStatisticsApi.as_view(),
+        name="container_storage_register_by_id",
+    ),
+]
 urlpatterns = [
     path(
         "container_visit_register/",
         ContainerStorageRegisterApi.as_view(),
         name="container_storage_register",
+    ),
+    path(
+        "container_visit/<int:visit_id>/dispatch/",
+        ContainerStorageDispatchApi.as_view(),
+        name="container_storage_register_by_id",
     ),
     path(
         "container_visit/<int:visit_id>/update/",
@@ -60,10 +88,15 @@ urlpatterns = [
         name="container_storage_register_by_id",
     ),
     path(
-        "container_visit_list/<int:customer_id>/",
+        "container_visit_list/<int:visit_id>/",
+        ContainerStorageDetailApi.as_view(),
+        name="container_storage_register_by_customer",
+    ),
+    path(
+        "container_visit_list/by_company/<int:company_id>/",
         ContainerStorageListByCustomerApi.as_view(),
         name="container_storage_register_by_customer",
     ),
-    path("container_statistics/", include(statistics_patterns)),
+    path("container_visit_statistics/", include(statistics_patterns)),
     path("files/", include(files_patterns)),
 ]

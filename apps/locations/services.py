@@ -16,7 +16,7 @@ from django.db.models.functions import Coalesce, Greatest, Extract
 from django.utils import timezone
 
 from apps.containers.models import ContainerStorage
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize
 from apps.locations.filters import ContainerLocationFilter
 from apps.locations.models import Yard, ContainerLocation
 
@@ -109,8 +109,8 @@ class YardService:
                             "name": loc.container.name,
                             "type": loc.container.type,
                             "customer": {
-                                "id": loc.terminal_visits.first().customer.id,
-                                "name": loc.terminal_visits.first().customer.name,
+                                "id": loc.terminal_visits.first().company.id,
+                                "name": loc.terminal_visits.first().company.name,
                             },
                             "entry_time": loc.terminal_visits.first().entry_time,
                             "storage_days": loc.terminal_visits.first().storage_days,
@@ -167,7 +167,7 @@ class YardService:
         return result
 
     def get_available_places(self, yard, container_type):
-        columns_needed = 1 if container_type == ContainerType.TWENTY else 2
+        columns_needed = 1 if container_type == ContainerSize.TWENTY else 2
         occupied_locations = ContainerLocation.objects.filter(yard=yard).values(
             "row", "column_start", "column_end", "tier", "container__type"
         )
@@ -229,7 +229,7 @@ class YardService:
                 and location["tier"] == tier - 1
                 and location["column_start"] <= column_start
                 and location["column_end"] >= column_start
-                and location["container__type"] == ContainerType.TWENTY
+                and location["container__type"] == ContainerSize.TWENTY
                 for location in occupied_locations
             )
 
@@ -238,7 +238,7 @@ class YardService:
                 and location["tier"] == tier - 1
                 and location["column_start"] <= column_end
                 and location["column_end"] >= column_end
-                and location["container__type"] == ContainerType.TWENTY
+                and location["container__type"] == ContainerSize.TWENTY
                 for location in occupied_locations
             )
 
@@ -262,7 +262,7 @@ class YardService:
 
 class ContainerLocationService:
     def create(self, container, data):
-        if container.type == ContainerType.TWENTY:
+        if container.type == ContainerSize.TWENTY:
             data["column_end"] = data["column_start"]
         else:
             data["column_end"] = data["column_start"] + 1

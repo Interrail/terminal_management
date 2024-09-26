@@ -33,22 +33,17 @@ class TestContainerStorageImageAPI:
         image1 = SimpleUploadedFile(
             "test_image1.png", create_test_image().getvalue(), content_type="image/png"
         )
-        image2 = SimpleUploadedFile(
-            "test_image2.png", create_test_image().getvalue(), content_type="image/png"
-        )
-        data = {"images": [image1, image2]}
+        data = {"file": image1}
         response = api_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["images"]) == 2
-        assert "id" in response.data["images"][0]
-        assert "image" in response.data["images"][0]
+        assert "id" in response.data
 
     def test_add_images_to_nonexistent_visit(self, api_client):
         url = reverse("container_storage_image", kwargs={"visit_id": 99999})
         image = SimpleUploadedFile(
             "test_image.png", create_test_image().getvalue(), content_type="image/png"
         )
-        data = {"images": [image]}
+        data = {"file": image}
         response = api_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
@@ -59,7 +54,7 @@ class TestContainerStorageImageAPI:
         invalid_file = SimpleUploadedFile(
             "test_file.txt", b"This is not an image", content_type="text/plain"
         )
-        data = {"images": [invalid_file]}
+        data = {"file": invalid_file}
         response = api_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
@@ -78,9 +73,9 @@ class TestContainerStorageImageAPI:
 
 @pytest.mark.django_db
 class TestContainerStorageDocumentAPI:
-    def test_add_documents_to_visit(self, api_client, container_terminal_visit):
+    def test_add_document_to_visit(self, api_client, container_terminal_visit):
         url = reverse(
-            "container_storage_document",
+            "container_storage_document_create",
             kwargs={"visit_id": container_terminal_visit.id},
         )
         doc1 = SimpleUploadedFile(
@@ -88,26 +83,18 @@ class TestContainerStorageDocumentAPI:
             create_test_document().getvalue(),
             content_type="application/pdf",
         )
-        doc2 = SimpleUploadedFile(
-            "test_doc2.pdf",
-            create_test_document().getvalue(),
-            content_type="application/pdf",
-        )
-        data = {"documents": [doc1, doc2]}
+        data = {"file": doc1}
         response = api_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_200_OK
-        assert len(response.data["documents"]) == 2
-        assert "id" in response.data["documents"][0]
-        assert "document" in response.data["documents"][0]
 
     def test_add_documents_to_nonexistent_visit(self, api_client):
-        url = reverse("container_storage_document", kwargs={"visit_id": 99999})
+        url = reverse("container_storage_document_create", kwargs={"visit_id": 999999})
         doc = SimpleUploadedFile(
             "test_doc.pdf",
             create_test_document().getvalue(),
             content_type="application/pdf",
         )
-        data = {"documents": [doc]}
+        data = {"file": doc}
         response = api_client.post(url, data, format="multipart")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 

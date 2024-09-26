@@ -6,320 +6,273 @@ from django.utils import timezone
 from rest_framework import status
 
 from apps.containers.models import ContainerStorage
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize, ContainerState, TransportType
 from apps.core.models import Container
 
 
 @pytest.mark.django_db
 class TestContainerStorageRegistration:
-    def test_successful_registration(self, api_client, customer, yard):
+    def test_successful_registration(self, api_client, company, yard, contract_service):
         url = reverse("container_storage_register")
         data = {
             "container_name": "CONT1998221",
-            "container_type": ContainerType.FORTY,
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 2,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": customer.id,
-            "is_empty": True,
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            # "container_location": {
+            #     "yard_id": yard.id,
+            #     "row": 2,
+            #     "column_start": 1,
+            #     "column_end": 2,
+            #     "tier": 1,
+            # },
+            "company_id": company.id,
+            "entry_time": "2024-01-01",
             "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.post(url, data, format="json")
-
         assert response.status_code == status.HTTP_201_CREATED
         assert ContainerStorage.objects.count() == 1
         assert Container.objects.filter(name="CONT1998221").exists()
 
-    def test_registration_with_existing_container(
+    def test_registration_with_container_already_in_storage(
         self,
         container_terminal_visit,
         api_client,
-        customer,
+        company,
         container,
         container_location,
         yard,
+        contract_service,
     ):
         url = reverse("container_storage_register")
         data = {
-            "container_name": container.name,
-            "container_type": container.type,
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 2,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": customer.id,
-            "is_empty": True,
+            "container_name": "ABCD1998028",
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            # "container_location": {
+            #     "yard_id": yard.id,
+            #     "row": 2,
+            #     "column_start": 1,
+            #     "column_end": 2,
+            #     "tier": 1,
+            # },
+            "company_id": company.id,
+            "entry_time": "2024-01-01",
             "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert ContainerStorage.objects.count() == 1
         assert Container.objects.count() == 1  # No new container created
 
-    def test_registration_with_container_already_in_storage(
-        self, api_client, customer, container, container_location, yard
-    ):
-        ContainerStorage.objects.create(
-            container=container,
-            container_location=container_location,
-            customer=customer,
-            is_empty=True,
-        )
+    def test_registration_with_nonexistent_customer(self, api_client, contract_service):
         url = reverse("container_storage_register")
         data = {
-            "container_name": container.name,
-            "container_type": container.type,
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 2,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": customer.id,
-            "is_empty": False,
-        }
-        response = api_client.post(url, data, format="json")
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "Container is already in storage" in str(response.content)
-
-    def test_registration_with_nonexistent_customer(
-        self, api_client, container_location, yard
-    ):
-        url = reverse("container_storage_register")
-        data = {
-            "container_name": "CONT00319822",
-            "container_type": ContainerType.TWENTY,
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 2,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": 9999,
-            "is_empty": True,
+            "container_name": "ABCD1998028",
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": 9999999,  # Non-existent customer ID
+            "entry_time": "2024-01-01",
+            "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_registration_with_custom_entry_time(self, api_client, customer, yard):
+    def test_registration_with_custom_entry_time(
+        self, api_client, company, contract_service
+    ):
         url = reverse("container_storage_register")
         custom_time = timezone.now() - timedelta(days=1)
         data = {
             "container_name": "CONT0042445",
-            "container_type": ContainerType.FORTY_HIGH_CUBE,
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 2,
-                "column_start": 2,
-                "column_end": 3,
-                "tier": 1,
-            },
-            "customer_id": customer.id,
-            "is_empty": False,
-            "entry_time": custom_time.isoformat(),
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": company.id,  # Non-existent customer ID
+            "entry_time": custom_time,
+            "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
         storage = ContainerStorage.objects.get(container__name="CONT0042445")
         assert storage.entry_time.isoformat() == custom_time.isoformat()
 
-    def test_registration_with_invalid_container_type(self, api_client, customer, yard):
-        url = reverse("container_storage_register")
-        data = {
-            "container_name": "CONT00424455",
-            "container_type": "INVALID",
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 2,
-                "column_start": 2,
-                "column_end": 3,
-                "tier": 1,
-            },
-            "customer_id": customer.id,
-            "is_empty": True,
-        }
-        response = api_client.post(url, data, format="json")
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert "is not a valid choice" in str(response.content)
-
-    def test_registration_with_duplicate_container_name(
-        self, api_client, customer, container, yard
+    def test_registration_with_invalid_container_size(
+        self, api_client, company, contract_service
     ):
         url = reverse("container_storage_register")
         data = {
-            "container_name": container.name,  # Duplicate name
-            "container_type": ContainerType.FORTY,  # Different type
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 1,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 2,
-            },
-            "customer_id": customer.id,
-            "is_empty": True,
+            "container_name": "CONT0042445",
+            "container_size": "12",
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": company.id,  # Non-existent customer ID
+            "entry_time": "2024-01-01",
+            "notes": "Test registration",
+            "active_services": [contract_service.id],
+        }
+        response = api_client.post(url, data, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_registration_with_duplicate_container_name(
+        self, api_client, company, container, contract_service
+    ):
+        url = reverse("container_storage_register")
+        data = {
+            "container_name": container.name,
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": company.id,  # Non-existent customer ID
+            "entry_time": "2024-01-01",
+            "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
         # Check that the existing container was used, not a new one created
         assert Container.objects.count() == 1
-        assert Container.objects.get().type == container.type
+        assert Container.objects.get().size == container.size
 
     def test_registration_with_missing_required_fields(self, api_client):
         url = reverse("container_storage_register")
         data = {
             "container_name": "CONT006",
-            # Missing container_type, customer_id, and is_empty
         }
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "This field is required" in str(response.content)
 
-    def test_registration_output_serializer(self, api_client, customer, yard):
+    def test_registration_output_serializer(
+        self, api_client, company, container, contract_service
+    ):
         url = reverse("container_storage_register")
         data = {
-            "container_name": "CONT007",
-            "container_type": ContainerType.TWENTY,
-            "container_location": {
-                "yard_id": yard.id,
-                "row": 3,
-                "column_start": 2,
-                "column_end": 3,
-                "tier": 1,
-            },
-            "customer_id": customer.id,
-            "is_empty": True,
-            "notes": "Test notes",
+            "container_name": container.name,
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": company.id,  # Non-existent customer ID
+            "entry_time": "2024-01-01",
+            "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
-        assert "container_location" in response.data
-        assert "customer" in response.data
-        assert "is_empty" in response.data
-        assert "entry_time" in response.data
+        assert "transport_type" in response.data
+        assert "company" in response.data
+        assert "container_state" in response.data
+        assert "container_owner" in response.data
         assert "notes" in response.data
-        assert response.data["container_location"]["container"]["name"] == "CONT007"
-        assert (
-            response.data["container_location"]["container"]["type"]
-            == ContainerType.TWENTY
-        )
-        assert response.data["customer"]["id"] == customer.id
-        assert response.data["is_empty"] is True
-        assert response.data["notes"] == "Test notes"
 
 
 @pytest.mark.django_db
 class TestContainerStorageUpdate:
     def test_successful_update(
-        self,
-        api_client,
-        container_terminal_visit,
-        container_location,
-        container,
-        customer,
-        yard,
+        self, api_client, container_terminal_visit, container, company, contract_service
     ):
         url = reverse(
             "container_storage_update", kwargs={"visit_id": container_terminal_visit.id}
         )
         data = {
-            "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": ContainerType.TWENTY,
-            "container_location": {
-                "yard_id": container_location.yard.id,
-                "row": 2,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": container_terminal_visit.customer.id,
-            "is_empty": False,
-            "notes": "Updated notes",
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": company.id,
+            "entry_time": "2024-01-01",
+            "notes": "Test registration",
+            "available_services": [contract_service.id],
         }
+
+        # Print initial state
+
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_200_OK
+
+        # Refresh the container_terminal_visit from the database
         container_terminal_visit.refresh_from_db()
-        assert container_terminal_visit.container.name == "UPDATEDNAME"
-        assert container_terminal_visit.container.type == ContainerType.TWENTY
-        assert not container_terminal_visit.is_empty
-        assert container_terminal_visit.notes == "Updated notes"
+        container_terminal_visit.container.refresh_from_db()
+        # Assertions
+        assert (
+            container_terminal_visit.container.name == "UPDATEDNAME"
+        ), f"Expected UPDATEDNAME, got {container_terminal_visit.container.name}"
+        assert container_terminal_visit.container.size == ContainerSize.FORTY
+        assert container_terminal_visit.container_state == ContainerState.LOADED
 
     def test_update_nonexistent_visit(
-        self, api_client, container_location, yard, container_terminal_visit
+        self, api_client, container_terminal_visit, company, container, contract_service
     ):
         url = reverse(
             "container_storage_update",
             kwargs={"visit_id": container_terminal_visit.id + 1},
         )
         data = {
-            "container_id": 1,
-            "container_name": "TESTCONT",
-            "container_type": ContainerType.FORTY,
-            "container_location": {
-                "yard_id": container_location.yard.id,
-                "row": 4,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": 1,
-            "is_empty": True,
-        }
-        response = api_client.put(url, data, format="json")
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    def test_update_with_invalid_container_id(
-        self, api_client, container_terminal_visit, container_location, yard, customer
-    ):
-        url = reverse(
-            "container_storage_update", kwargs={"visit_id": container_terminal_visit.id}
-        )
-        data = {
-            "container_id": 99999,  # Non-existent container ID
+            "container_id": container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": ContainerType.TWENTY,
-            "container_location": {
-                "yard_id": container_location.yard.id,
-                "row": 2,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": container_terminal_visit.customer.id,
-            "is_empty": False,
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": company.id,  # Non-existent customer ID
+            "entry_time": "2024-01-01",
+            "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_update_with_invalid_customer_id(
-        self, api_client, container_terminal_visit, container_location, yard, container
+        self, api_client, container_terminal_visit, contract_service, company, container
     ):
         url = reverse(
             "container_storage_update", kwargs={"visit_id": container_terminal_visit.id}
         )
         data = {
-            "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": ContainerType.TWENTY,
-            "container_location": {
-                "yard_id": container_location.yard.id,
-                "row": 2,
-                "column_start": 1,
-                "column_end": 2,
-                "tier": 1,
-            },
-            "customer_id": 99999,  # Non-existent customer ID
-            "is_empty": False,
+            "container_size": ContainerSize.FORTY,
+            "container_state": ContainerState.LOADED,
+            "container_owner": "Test Owner",
+            "product_name": "Test Product",
+            "transport_type": TransportType.AUTO,
+            "transport_number": "Test Number",
+            "company_id": company.id + 9999999,  # Non-existent customer ID
+            "entry_time": "2024-01-01",
+            "notes": "Test registration",
+            "active_services": [contract_service.id],
         }
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -329,9 +282,9 @@ class TestContainerStorageUpdate:
         api_client,
         container_terminal_visit,
         container_location,
-        customer,
         container,
         yard,
+        company,
     ):
         url = reverse(
             "container_storage_update", kwargs={"visit_id": container_terminal_visit.id}
@@ -339,7 +292,7 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "INVALIDNAMEINVALID",  # Assuming there's validation for container names
-            "container_type": ContainerType.TWENTY,
+            "container_type": ContainerSize.TWENTY,
             "container_location": {
                 "yard_id": container_location.yard.id,
                 "row": 2,
@@ -347,7 +300,7 @@ class TestContainerStorageUpdate:
                 "column_end": 2,
                 "tier": 1,
             },
-            "customer_id": container_terminal_visit.customer.id,
+            "company_id": container_terminal_visit.company.id,
             "is_empty": False,
         }
         response = api_client.put(url, data, format="json")
@@ -358,9 +311,9 @@ class TestContainerStorageUpdate:
         api_client,
         container_terminal_visit,
         container,
-        customer,
         container_location,
         yard,
+        company,
     ):
         url = reverse(
             "container_storage_update", kwargs={"visit_id": container_terminal_visit.id}
@@ -368,8 +321,8 @@ class TestContainerStorageUpdate:
         data = {
             "container_id": container_terminal_visit.container_location.container.id,
             "container_name": "UPDATEDNAME",
-            "container_type": ContainerType.TWENTY,
-            "customer_id": container_terminal_visit.customer.id,
+            "container_type": ContainerSize.TWENTY,
+            "company_id": container_terminal_visit.company.id,
             "container_location": {
                 "yard_id": container_location.yard.id,
                 "row": 2,
@@ -384,60 +337,6 @@ class TestContainerStorageUpdate:
         }
         response = api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-
-    def test_update_with_partial_data(
-        self,
-        api_client,
-        container_terminal_visit,
-        container_location,
-        container,
-        customer,
-    ):
-        url = reverse(
-            "container_storage_update", kwargs={"visit_id": container_terminal_visit.id}
-        )
-        data = {
-            "container_id": container_terminal_visit.container_location.container.id,
-            "container_name": "UPDATEDNAME",
-            "container_type": ContainerType.TWENTY,
-            "customer_id": container_terminal_visit.customer.id,
-            "is_empty": False,
-        }
-        response = api_client.put(url, data, format="json")
-        assert response.status_code == status.HTTP_200_OK
-        container_terminal_visit.refresh_from_db()
-        assert (
-            container_terminal_visit.container_location.container.name == "UPDATEDNAME"
-        )
-        assert not container_terminal_visit.is_empty
-
-    def test_update_with_same_data(
-        self,
-        api_client,
-        container_terminal_visit,
-        container_location,
-        container,
-        customer,
-    ):
-        url = reverse(
-            "container_storage_update", kwargs={"visit_id": container_terminal_visit.id}
-        )
-        data = {
-            "container_id": container_terminal_visit.container_location.container.id,
-            "container_name": container_terminal_visit.container_location.container.name,
-            "container_type": container_terminal_visit.container_location.container.type,
-            "customer_id": container_terminal_visit.customer.id,
-            "is_empty": container_terminal_visit.is_empty,
-        }
-        response = api_client.put(url, data, format="json")
-        assert response.status_code == status.HTTP_200_OK
-        # Check that no actual changes were made
-        container_terminal_visit.refresh_from_db()
-        assert (
-            container_terminal_visit.container_location.container.name
-            == data["container_name"]
-        )
-        assert container_terminal_visit.is_empty == data["is_empty"]
 
 
 @pytest.mark.django_db

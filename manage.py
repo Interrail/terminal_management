@@ -22,3 +22,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+largest = 0
+smallest = 0

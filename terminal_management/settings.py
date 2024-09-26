@@ -33,6 +33,8 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 CORS_ALLOW_ALL_ORIGINS = True
 # Application definition
+CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = ["https://terminal.danke.uz"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -46,6 +48,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "silk",
     "corsheaders",
+    "django_prometheus",
     # Local apps
     "apps.core.apps.CoreConfig",
     "apps.users.apps.UsersConfig",
@@ -56,6 +59,7 @@ INSTALLED_APPS = [
 ]
 AUTH_USER_MODEL = "users.CustomUser"
 MIDDLEWARE = [
+    "django_prometheus.middleware.PrometheusBeforeMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -65,6 +69,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "silk.middleware.SilkyMiddleware",
+    "django_prometheus.middleware.PrometheusAfterMiddleware",
 ]
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
 ROOT_URLCONF = "terminal_management.urls"

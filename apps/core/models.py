@@ -1,7 +1,8 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize, ContainerState, MeasurementUnit
 
 
 class BaseModel(models.Model):
@@ -16,8 +17,8 @@ class Container(models.Model):
     name = models.CharField(
         max_length=12, unique=True, db_index=True, verbose_name=_("Container Name")
     )
-    type = models.CharField(
-        max_length=4, choices=ContainerType.choices, verbose_name=_("Container Type")
+    size = models.CharField(
+        max_length=4, choices=ContainerSize.choices, verbose_name=_("Container Type")
     )
 
     class Meta:
@@ -26,7 +27,7 @@ class Container(models.Model):
         verbose_name_plural = _("Containers")
 
     def __str__(self):
-        return f"{self.name} ({self.get_type_display()})"
+        return f"{self.name} ({self.get_size_display()})"
 
     @property
     def in_storage(self):
@@ -34,8 +35,49 @@ class Container(models.Model):
 
     @property
     def teu(self):
-        size = self.type
-        if size == ContainerType.TWENTY:
+        size = self.size
+        if size == ContainerSize.TWENTY:
             return 1
         else:
             return 2
+
+
+class TerminalServiceType(BaseModel):
+    name = models.TextField(unique=True)
+    unit_of_measure = models.CharField(max_length=50, choices=MeasurementUnit.choices)
+
+    class Meta:
+        db_table = "terminal_service_type"
+        verbose_name = "Terminal Service Type"
+        verbose_name_plural = "Terminal Service Types"
+
+    def __str__(self):
+        return self.name
+
+
+class TerminalService(BaseModel):
+    name = models.TextField(unique=True)
+    service_type = models.ForeignKey(
+        TerminalServiceType,
+        on_delete=models.PROTECT,
+        related_name="services",
+        null=True,
+    )
+    container_size = models.CharField(
+        max_length=50, choices=ContainerSize.choices, default="ANY"
+    )
+    container_state = models.CharField(
+        max_length=6, choices=ContainerState.choices, default="ANY"
+    )
+    base_price = models.DecimalField(
+        max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
+    )
+    description = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ["name", "container_size", "container_state"]
+        verbose_name = "Terminal Service"
+        verbose_name_plural = "Terminal Services"
+
+    def __str__(self):
+        return f"{self.name} ({self.get_container_size_display()} - {self.get_container_state_display()})"

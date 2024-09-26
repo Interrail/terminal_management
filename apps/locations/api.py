@@ -4,7 +4,7 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.choices import ContainerType
+from apps.core.choices import ContainerSize
 from apps.core.pagination import LimitOffsetPagination
 from apps.locations.services import YardService
 
@@ -33,7 +33,7 @@ class YardListApi(APIView):
 class AvailablePlacesApi(APIView):
     class FilterSerializer(serializers.Serializer):
         container_type = serializers.ChoiceField(
-            choices=ContainerType.choices, required=True
+            choices=ContainerSize.choices, required=True
         )
         customer_id = serializers.IntegerField(required=False)
 

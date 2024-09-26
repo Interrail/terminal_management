@@ -7,37 +7,27 @@ from apps.containers.services.container_storage_files import (
     ContainerImageService,
     ContainerDocumentService,
 )
-from apps.core.utils import inline_serializer
 
 
-class ContainerStorageAddImageListApi(APIView):
-    class ContainerStorageAddImageListSerializer(serializers.Serializer):
-        images = serializers.ListField(child=serializers.ImageField())
-
+class ContainerStorageAddImageApi(APIView):
     class ContainerStorageAddImageListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
-        images = inline_serializer(
-            fields={
-                "id": serializers.IntegerField(read_only=True),
-                "image": serializers.ImageField(read_only=True),
-                "name": serializers.CharField(read_only=True),
-            },
-            many=True,
-        )
 
     @extend_schema(
         summary="Add images to container visit",
-        request=ContainerStorageAddImageListSerializer,
         responses=ContainerStorageAddImageListOutputSerializer,
     )
     def post(self, request, visit_id):
-        serializer = self.ContainerStorageAddImageListSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        container_visit = ContainerImageService().create_images(
-            visit_id, serializer.validated_data["images"]
-        )
+        file = request.FILES.get("file")
+        if not file or not file.content_type.startswith("image/"):
+            return Response(
+                {"error": "An image file is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        container_image_service = ContainerImageService()
+        container_image = container_image_service.create_image(visit_id, file)
         return Response(
-            self.ContainerStorageAddImageListOutputSerializer(container_visit).data,
+            self.ContainerStorageAddImageListOutputSerializer(container_image).data,
             status=status.HTTP_200_OK,
         )
 
@@ -55,33 +45,26 @@ class ContainerStorageImageDeleteApi(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ContainerStorageAddDocumentListApi(APIView):
-    class ContainerStorageAddDocumentListSerializer(serializers.Serializer):
-        documents = serializers.ListField(child=serializers.FileField())
-
+class ContainerStorageAddDocumentApi(APIView):
     class ContainerStorageAddDocumentListOutputSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
-        documents = inline_serializer(
-            fields={
-                "id": serializers.IntegerField(read_only=True),
-                "document": serializers.FileField(read_only=True),
-            },
-            many=True,
-        )
 
     @extend_schema(
         summary="Add documents to container visit",
-        request=ContainerStorageAddDocumentListSerializer,
         responses=ContainerStorageAddDocumentListOutputSerializer,
     )
     def post(self, request, visit_id):
-        serializer = self.ContainerStorageAddDocumentListSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        container_visit = ContainerDocumentService().create_documents(
-            visit_id, serializer.validated_data["documents"]
-        )
+        file = request.FILES.get("file")
+        if not file:
+            return Response(
+                {"error": "File is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        container_document = ContainerDocumentService().create_documents(visit_id, file)
         return Response(
-            self.ContainerStorageAddDocumentListOutputSerializer(container_visit).data,
+            self.ContainerStorageAddDocumentListOutputSerializer(
+                container_document
+            ).data,
             status=status.HTTP_200_OK,
         )
 
@@ -97,3 +80,35 @@ class ContainerStorageDocumentDeleteApi(APIView):
     def delete(self, request, document_id):
         ContainerDocumentService().delete_document(document_id)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ContainerStorageImageDownloadApi(APIView):
+    class ContainerStorageImageDownloadSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        image = serializers.FileField()
+
+    @extend_schema(summary="Download images", responses={200: "Stream of image files"})
+    def get(self, request, visit_id):
+        container_image_service = ContainerImageService()
+        images = container_image_service.get_images(visit_id)
+        return Response(
+            self.ContainerStorageImageDownloadSerializer(images, many=True).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ContainerStorageDocumentDownloadApi(APIView):
+    class ContainerStorageDocumentDownloadSerializer(serializers.Serializer):
+        id = serializers.IntegerField()
+        document = serializers.FileField()
+
+    @extend_schema(
+        summary="Download documents", responses={200: "Stream of document files"}
+    )
+    def get(self, request, visit_id):
+        container_document_service = ContainerDocumentService()
+        documents = container_document_service.get_documents(visit_id)
+        return Response(
+            self.ContainerStorageDocumentDownloadSerializer(documents, many=True).data,
+            status=status.HTTP_200_OK,
+        )
