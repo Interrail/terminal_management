@@ -18,8 +18,6 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy the project files into the container
 COPY . /app/
 
-# Run makemigrations and migrate
-RUN python manage.py makemigrations
-RUN python manage.py migrate
+
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8001"]
