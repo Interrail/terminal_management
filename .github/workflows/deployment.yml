@@ -8,6 +8,7 @@ jobs:
       name: testing
     env:
       DATABASE_URL: postgres://postgres:1998@localhost:5432/terminal
+
     services:
       postgres:
         image: postgres
