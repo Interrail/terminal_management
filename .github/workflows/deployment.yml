@@ -7,11 +7,11 @@ jobs:
     environment:
       name: testing
     env:
-        DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
-        DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
-        DATABASE_PASS: ${{ secrets.DATABASE_PASS }}
-        DATABASE_USER: ${{ secrets.DATABASE_USER }}
-        DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
+      DATABASE_NAME: postgres
+      DATABASE_USER: postgres
+      DATABASE_PASS: ${{secrets.DATABASE_PASS}}
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
     services:
       postgres:
         image: postgres
@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: pulling git repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Install python version 3.12
         uses: actions/setup-python@v2
         with:
