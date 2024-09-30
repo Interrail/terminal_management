@@ -6,9 +6,7 @@ __pycache__
 db.sqlite3
 media
 # Only for Development only
- **/migrations/**
- !**/migrations
- !**/migrations/__init__.py
+
 # Backup files #
 *.bak
 
@@ -103,7 +101,5 @@ venv.bak/
 !.vscode/launch.json
 !.vscode/extensions.json
 .history
-/apps/users/migrations/0001_initial.py
-/apps/finance/migrations/0001_initial.py
 !/terminal_management/.venv
 !/terminal_management/terminal_management/.env
