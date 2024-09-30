@@ -60,13 +60,13 @@ jobs:
       - name: Set Tag in Env Variable
         run: |
           echo "${GITHUB_SHA:0:7}" > TAG
-          echo "test.test.uz:7007/${{ github.event.repository.name }}" > IMAGE_NAME
+          echo "docker.interrail.uz:7007/${{ github.event.repository.name }}" > IMAGE_NAME
 
       - name: Build the Docker Image
         run: docker build . --file Dockerfile --tag $(cat IMAGE_NAME):$(cat TAG)
 
       - name: Docker Login
-        run: docker login test.test.uz:7007 -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+        run: docker login docker.interrail.uz:7007 -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Image Push
         run: docker push $(cat IMAGE_NAME):$(cat TAG)
