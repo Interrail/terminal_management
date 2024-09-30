@@ -12,7 +12,8 @@ jobs:
       postgres:
         image: postgres
         env:
-          DATABASE_URL: postgres://postgres:1998@localhost:5432/terminal
+            POSTGRES_PASSWORD: 1998
+            POSTGRES_DB: terminal
         ports:
           - 5432:5432
         options: >-
