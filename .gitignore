@@ -93,7 +93,7 @@ venv.bak/
 .idea/**/gradle.xml
 .idea/**/libraries
 *.iws /out/
-!/terminal_management/.env
+terminal_management/.env
 
 # Visual Studio Code #
 .vscode/*

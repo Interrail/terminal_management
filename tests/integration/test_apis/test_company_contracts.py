@@ -4,7 +4,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
-from terminal_management import settings
+from terminal_management.settings.development import MEDIA_ROOT
 
 
 @pytest.mark.django_db
@@ -24,7 +24,7 @@ class TestCompanyContractAPI:
         }
         url = reverse("company_contract_create", kwargs={"company_id": company.id})
         response = api_client.post(url, data, format="multipart")
-        file_path = os.path.join(settings.MEDIA_ROOT, "contracts/temp_file.txt")
+        file_path = os.path.join(MEDIA_ROOT, "contracts/temp_file.txt")
         if os.path.exists(file_path):
             os.remove(file_path)
         assert response.status_code == 201
@@ -43,7 +43,7 @@ class TestCompanyContractAPI:
         }
         url = reverse("company_contract_update", kwargs={"contract_id": contract.id})
         response = api_client.put(url, data, format="multipart")
-        file_path = os.path.join(settings.MEDIA_ROOT, "contracts/temp_file.txt")
+        file_path = os.path.join(MEDIA_ROOT, "contracts/temp_file.txt")
         if os.path.exists(file_path):
             os.remove(file_path)
         assert response.status_code == 200
