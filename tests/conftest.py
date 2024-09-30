@@ -7,9 +7,14 @@ from apps.containers.models import (
     ContainerImage,
 )
 from apps.core.choices import ContainerSize, ContainerState, MeasurementUnit
-from apps.core.models import Container
+from apps.core.models import Container, FreeDayCombination
 from apps.core.models import TerminalService, TerminalServiceType
-from apps.customers.models import Company, CompanyContract, ContractService
+from apps.customers.models import (
+    Company,
+    CompanyContract,
+    ContractService,
+    ContractFreeDay,
+)
 from apps.locations.models import Yard, ContainerLocation
 from apps.users.models import CustomUser
 
@@ -164,3 +169,31 @@ def terminal_service(terminal_service_type):
         container_state=ContainerState.LOADED,
         base_price=100,
     )
+
+
+@pytest.fixture
+def free_day_combination():
+    container_sizes = ContainerSize.choices  # Define your container sizes
+    container_states = ContainerState.choices  # Define your container states
+    categories = ["import", "export", "transit"]
+    for size in container_sizes:
+        for state in container_states:
+            for category in categories:
+                FreeDayCombination.objects.get_or_create(
+                    container_size=size[0],
+                    container_state=state[0],
+                    category=category,
+                    defaults={"default_free_days": 0},
+                )
+
+
+@pytest.fixture
+def contract_free_days(contract, free_day_combination):
+    free_day_combinations = FreeDayCombination.objects.all()
+    for combination in free_day_combinations:
+        ContractFreeDay.objects.get_or_create(
+            contract=contract,
+            free_day_combination=combination,
+            defaults={"free_days": combination.default_free_days},
+        )
+    return ContractFreeDay.objects.all()

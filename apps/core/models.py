@@ -81,3 +81,21 @@ class TerminalService(BaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.get_container_size_display()} - {self.get_container_state_display()})"
+
+
+class FreeDayCombination(BaseModel):
+    container_size = models.CharField(max_length=50, choices=ContainerSize.choices)
+    container_state = models.CharField(max_length=50, choices=ContainerState.choices)
+    category = models.CharField(
+        max_length=50,
+        choices=(("import", "Import"), ("export", "Export"), ("transit", "Transit")),
+    )
+    default_free_days = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = ("container_size", "container_state", "category")
+        verbose_name = "Free Day Combination"
+        verbose_name_plural = "Free Day Combinations"
+
+    def __str__(self):
+        return f"{self.get_container_size_display()} - {self.get_container_state_display()} - {self.get_category_display()}"

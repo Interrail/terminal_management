@@ -89,7 +89,6 @@ class CompanyListApi(APIView):
                     "name": contract.name,
                     "start_date": contract.start_date,
                     "end_date": contract.end_date,
-                    "free_days": contract.free_days,
                 }
             return None
 

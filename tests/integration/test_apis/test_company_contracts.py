@@ -19,6 +19,7 @@ class TestCompanyContractAPI:
             "start_date": "2024-01-01",
             "end_date": "2024-12-31",
             "is_active": True,
+            "free_days": 10,
             "file": SimpleUploadedFile("temp_file.txt", b"Temporary file content"),
         }
         url = reverse("company_contract_create", kwargs={"company_id": company.id})

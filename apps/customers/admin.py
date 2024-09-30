@@ -2,7 +2,13 @@ from django.contrib import admin
 from django.urls import reverse
 from django.utils.html import format_html
 
-from .models import Company, CompanyUser, CompanyContract, ContractService
+from .models import (
+    Company,
+    CompanyUser,
+    CompanyContract,
+    ContractService,
+    ContractFreeDay,
+)
 
 
 class CompanyUserInline(admin.TabularInline):
@@ -59,6 +65,9 @@ class CompanyUserAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related("company", "user")
+
+
+admin.site.register(ContractFreeDay)
 
 
 admin.site.register(CompanyContract)

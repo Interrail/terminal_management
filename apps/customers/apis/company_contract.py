@@ -4,7 +4,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.pagination import get_paginated_response, LimitOffsetPagination
-from apps.customers.services import CompanyContractService, ContractServiceService
+from apps.customers.services import (
+    CompanyContractService,
+    ContractServiceService,
+    ContractFreeDayService,
+)
 
 
 class CompanyContractCreateApi(APIView):
@@ -13,7 +17,7 @@ class CompanyContractCreateApi(APIView):
         start_date = serializers.DateField(required=True, allow_null=True)
         end_date = serializers.DateField(required=True, allow_null=True)
         is_active = serializers.BooleanField(required=True)
-        free_days = serializers.IntegerField(default=0)
+        free_days = serializers.IntegerField(required=True)
         file = serializers.FileField(required=True)
 
     def post(self, request, company_id):
@@ -33,7 +37,6 @@ class CompanyContractDetailApi(APIView):
         start_date = serializers.DateField(read_only=True)
         end_date = serializers.DateField(read_only=True)
         is_active = serializers.BooleanField(read_only=True)
-        free_days = serializers.IntegerField(read_only=True)
         file = serializers.FileField(read_only=True)
         service_count = serializers.SerializerMethodField("get_service_count")
 
@@ -56,7 +59,6 @@ class CompanyContractUpdateApi(APIView):
         start_date = serializers.DateField(required=True, allow_null=True)
         end_date = serializers.DateField(required=True, allow_null=True)
         is_active = serializers.BooleanField(required=True)
-        free_days = serializers.IntegerField(default=0)
         file = serializers.FileField(required=False)
 
     def put(self, request, contract_id):
@@ -93,7 +95,6 @@ class CompanyContractByCompanyListApi(APIView):
         start_date = serializers.DateField(read_only=True)
         end_date = serializers.DateField(read_only=True)
         is_active = serializers.BooleanField(read_only=True)
-        free_days = serializers.IntegerField(read_only=True)
         file = serializers.FileField(read_only=True)
         service_count = serializers.SerializerMethodField("get_service_count")
 
@@ -241,5 +242,67 @@ class CompanyServiceUpdateApi(APIView):
 
         return Response(
             data=self.CompanyServiceUpdateSerializer(service).data,
+            status=status.HTTP_200_OK,
+        )
+
+
+class ContractFreeDaysListApi(APIView):
+    class Pagination(LimitOffsetPagination):
+        default_limit = 100
+        max_limit = 100
+
+    class FilterSerializer(serializers.Serializer):
+        container_size = serializers.CharField(required=False)
+        container_state = serializers.CharField(required=False)
+        category = serializers.CharField(required=False)
+        free_days = serializers.IntegerField(required=False)
+
+    class CompanyFreeDaysListSerializer(serializers.Serializer):
+        id = serializers.IntegerField(read_only=True)
+        container_size = serializers.CharField(
+            source="free_day_combination.container_size", read_only=True
+        )
+        container_state = serializers.CharField(
+            source="free_day_combination.container_state", read_only=True
+        )
+        category = serializers.CharField(
+            source="free_day_combination.category", read_only=True
+        )
+        free_days = serializers.IntegerField(read_only=True)
+
+    @extend_schema(responses=CompanyFreeDaysListSerializer)
+    def get(self, request, contract_id):
+        filter_serializer = self.FilterSerializer(data=request.query_params)
+        filter_serializer.is_valid(raise_exception=True)
+        company_contract_service = ContractFreeDayService()
+        free_days = company_contract_service.get_free_days_by_contract(
+            contract_id, filter_serializer.validated_data
+        )
+        return get_paginated_response(
+            pagination_class=self.Pagination,
+            serializer_class=self.CompanyFreeDaysListSerializer,
+            queryset=free_days,
+            request=request,
+            view=self,
+        )
+
+
+class CompanyFreeDaysUpdateApi(APIView):
+    class CompanyFreeDaysUpdateSerializer(serializers.Serializer):
+        id = serializers.IntegerField(read_only=True)
+        free_days = serializers.IntegerField(required=True)
+
+    @extend_schema(request=CompanyFreeDaysUpdateSerializer)
+    def put(self, request, contract_id, free_day_id):
+        serializer = self.CompanyFreeDaysUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        company_contract_service = ContractFreeDayService()
+        free_day = company_contract_service.update_free_day(
+            contract_id, free_day_id, serializer.validated_data
+        )
+
+        return Response(
+            data=self.CompanyFreeDaysUpdateSerializer(free_day).data,
             status=status.HTTP_200_OK,
         )

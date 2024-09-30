@@ -103,4 +103,5 @@ venv.bak/
 .history
 /apps/users/migrations/0001_initial.py
 /apps/finance/migrations/0001_initial.py
-!/terminal_management/.env_prod.py
+!/terminal_management/.env
+!/terminal_management/.venv

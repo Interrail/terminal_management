@@ -16,6 +16,8 @@ from apps.customers.apis.company_contract import (
     CompanyServiceUpdateApi,
     CompanyContractDetailApi,
     CompanyActiveServiceListByCompanyApi,
+    ContractFreeDaysListApi,
+    CompanyFreeDaysUpdateApi,
 )
 
 contract_patterns = [
@@ -58,6 +60,16 @@ contract_patterns = [
         "<int:contract_id>/services/update/<int:service_id>/",
         CompanyServiceUpdateApi.as_view(),
         name="company_contract_update",
+    ),
+    path(
+        "<int:contract_id>/free_days/list/",
+        ContractFreeDaysListApi.as_view(),
+        name="contract_free_days_list",
+    ),
+    path(
+        "<int:contract_id>/free_days/<int:free_day_id>/update/",
+        CompanyFreeDaysUpdateApi.as_view(),
+        name="contract_free_days_update",
     ),
 ]
 

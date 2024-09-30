@@ -3,9 +3,14 @@ from django.db.models import Count, Subquery, OuterRef, Prefetch
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import ValidationError
 
-from apps.customers.filters import CompanyFilter, CompanyServiceFilter
-from apps.customers.models import Company, CompanyContract, ContractService
 from apps.core.models import TerminalService
+from apps.customers.filters import CompanyFilter, CompanyServiceFilter, FreeDaysFilter
+from apps.customers.models import (
+    Company,
+    CompanyContract,
+    ContractService,
+    ContractFreeDay,
+)
 
 
 class CompanyService:
@@ -139,3 +144,19 @@ class ContractServiceService:
             contract__is_active=True,
         )
         return CompanyServiceFilter(filters, queryset=qs).qs
+
+
+class ContractFreeDayService:
+    def get_free_days_by_contract(self, contract_id, filters=None):
+        filters = filters or {}
+        qs = ContractFreeDay.objects.filter(contract_id=contract_id)
+        return FreeDaysFilter(filters, queryset=qs).qs
+
+    def update_free_day(self, contract_id, free_day_id, data):
+        free_day = get_object_or_404(
+            ContractFreeDay, id=free_day_id, contract_id=contract_id
+        )
+        for key, value in data.items():
+            setattr(free_day, key, value)
+        free_day.save()
+        return free_day
