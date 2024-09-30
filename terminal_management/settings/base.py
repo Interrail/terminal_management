@@ -146,6 +146,3 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     # OTHER SETTINGS
 }
-print(os.getenv("DATABASE_URL"))
-print(os.getenv("DJANGO_SECRET_KEY"))
-print(os.getenv("DJANGO_SETTINGS_MODULE"))

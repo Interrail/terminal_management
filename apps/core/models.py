@@ -91,6 +91,7 @@ class FreeDayCombination(BaseModel):
         choices=(("import", "Import"), ("export", "Export"), ("transit", "Transit")),
     )
     default_free_days = models.PositiveIntegerField(default=0)
+    test_free_days = models.PositiveIntegerField(default=0)
 
     class Meta:
         unique_together = ("container_size", "container_state", "category")
