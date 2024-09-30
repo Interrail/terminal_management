@@ -45,3 +45,19 @@ jobs:
         run: |
             pip install pytest
             pytest --junitxml=junit/test-results.xml
+
+
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set Tag in evn variable
+      run: |
+        echo "${GITHUB_SHA:0:7}" > TAG
+        echo "docker.interrail.uz:7007/${{ github.event.repository.name }}" > IMAGE_NAME
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag  $(cat IMAGE_NAME):$(cat TAG)
+    - name: Docker Login
+      run: docker login docker.interrail.uz:7007 -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+    - name: Image push
+      run: docker push  $(cat IMAGE_NAME):$(cat TAG)
