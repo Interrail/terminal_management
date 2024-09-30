@@ -93,6 +93,7 @@ venv.bak/
 .idea/**/gradle.xml
 .idea/**/libraries
 *.iws /out/
+!/terminal_management/.env
 
 # Visual Studio Code #
 .vscode/*
@@ -103,5 +104,4 @@ venv.bak/
 .history
 /apps/users/migrations/0001_initial.py
 /apps/finance/migrations/0001_initial.py
-!/terminal_management/.env
 !/terminal_management/.venv
