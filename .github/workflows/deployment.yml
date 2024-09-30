@@ -50,6 +50,12 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     needs: build
+    env:
+        DATABASE_HOST: ${{ secrets.DATABASE_HOST }}
+        DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+        DATABASE_PASS: ${{ secrets.DATABASE_PASS }}
+        DATABASE_USER: ${{ secrets.DATABASE_USER }}
+        DATABASE_PORT: ${{ secrets.DATABASE_PORT }}
     steps:
     - uses: actions/checkout@v3
     - name: Set Tag in evn variable
