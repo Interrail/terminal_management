@@ -10,7 +10,7 @@ jobs:
       DATABASE_NAME: postgres
       DATABASE_USER: postgres
       DATABASE_PASS: ${{secrets.DATABASE_PASS}}
-      DATABASE_HOST: localhost
+      DATABASE_HOST: localhost123
       DATABASE_PORT: 5432
     services:
       postgres:
@@ -50,12 +50,6 @@ jobs:
   build-image:
     runs-on: ubuntu-latest
     needs: build
-    env:
-      DATABASE_NAME: terminal_management
-      DATABASE_USER: danke
-      DATABASE_PASS: 9dee560f21eaSWq201d
-      DATABASE_HOST: 75.119.145.236
-      DATABASE_PORT: 5435
     steps:
     - uses: actions/checkout@v3
     - name: Set Tag in evn variable
