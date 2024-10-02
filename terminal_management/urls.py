@@ -35,6 +35,7 @@ urlpatterns = [
     path("finance/", include("apps.finance.urls")),
     path("core/", include("apps.core.urls")),
     path("", include("django_prometheus.urls")),
+    path("cdn/", include("apps.cdn.urls")),
 ]
 urlpatterns += [path("silk/", include("silk.urls", namespace="silk"))]
 if settings.DEBUG:

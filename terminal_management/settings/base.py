@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_prometheus",
     # Local apps
+    "apps.cdn.apps.CDNConfig",
     "apps.core.apps.CoreConfig",
     "apps.users.apps.UsersConfig",
     "apps.containers.apps.ContainersConfig",
