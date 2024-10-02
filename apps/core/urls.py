@@ -43,12 +43,12 @@ terminal_services_patterns = [
     ),
     path("create/", TerminalServiceCreateApi.as_view(), name="terminal_service_create"),
     path(
-        "<int:service_id>/update",
+        "<int:service_id>/update/",
         TerminalServiceUpdateApi.as_view(),
         name="terminal_service_update",
     ),
     path(
-        "<int:service_id>/delete",
+        "<int:service_id>/delete/",
         TerminalServiceDeleteApi.as_view(),
         name="terminal_service_delete",
     ),

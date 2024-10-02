@@ -122,7 +122,6 @@ class TerminalServiceCreateApi(APIView):
     def post(self, request):
         serializer = self.ServiceCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        print(serializer.validated_data)
         terminal_service = TerminalServiceService()
         terminal_service = terminal_service.create(serializer.validated_data)
         return Response(

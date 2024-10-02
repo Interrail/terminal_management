@@ -18,6 +18,7 @@ class TransportType(TextChoices):
 class ContainerState(TextChoices):
     LOADED = "loaded", _("loaded")
     EMPTY = "empty", _("empty")
+    ANY = "any", _("any")
 
 
 class MeasurementUnit(TextChoices):
