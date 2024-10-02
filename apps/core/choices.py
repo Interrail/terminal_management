@@ -8,6 +8,7 @@ class ContainerSize(TextChoices):
     FORTY = "40", _("40 ft Standard")
     FORTY_HIGH_CUBE = "40HC", _("40 ft High Cube")
     FORTY_FIVE = "45", _("45 ft High Cube")
+    ANY = "any", _("any")
 
 
 class TransportType(TextChoices):
