@@ -112,13 +112,6 @@ class TerminalServiceCreateApi(APIView):
                 raise serializers.ValidationError("Service Type does not exist.")
             return value
 
-        def validate_name(self, value):
-            if TerminalService.objects.filter(name=value).exists():
-                raise serializers.ValidationError(
-                    "Service with this name already exists."
-                )
-            return value
-
     def post(self, request):
         serializer = self.ServiceCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
