@@ -56,7 +56,7 @@ class TerminalServiceType(BaseModel):
 
 
 class TerminalService(BaseModel):
-    name = models.TextField(unique=True)
+    name = models.TextField()
     service_type = models.ForeignKey(
         TerminalServiceType,
         on_delete=models.PROTECT,
