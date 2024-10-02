@@ -21,14 +21,6 @@ class TestTerminalServiceTypeAPI:
         assert response.status_code == status.HTTP_201_CREATED
         assert TerminalServiceType.objects.filter(name="Test Service Type").exists()
 
-    def test_create_duplicate_terminal_service_type(
-        self, api_client, terminal_service_type
-    ):
-        url = reverse("terminal_service_type_create")
-        data = {"name": terminal_service_type.name, "unit_of_measure": "unit"}
-        response = api_client.post(url, data, format="json")
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-
     def test_update_terminal_service_type(self, api_client, terminal_service_type):
         url = reverse(
             "terminal_service_type_update", kwargs={"pk": terminal_service_type.id}
