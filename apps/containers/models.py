@@ -134,6 +134,8 @@ class ContainerServiceInstance(BaseModel):
     )
     performed_at = models.DateTimeField(default=timezone.now)
     notes = models.TextField(blank=True, default="")
+    date_from = models.DateField(null=True, blank=True)
+    date_to = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["-performed_at"]
