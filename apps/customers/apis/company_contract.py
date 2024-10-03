@@ -137,6 +137,7 @@ class CompanyServiceListByContractApi(APIView):
             source="service.container_state", read_only=True
         )
         base_price = serializers.FloatField(source="service.base_price", read_only=True)
+        multiple_usage = serializers.BooleanField(source="service.multiple_usage")
         price = serializers.FloatField(read_only=True)
 
         def get_service_type(self, obj):
@@ -189,6 +190,7 @@ class CompanyActiveServiceListByCompanyApi(APIView):
             source="service.container_state", read_only=True
         )
         base_price = serializers.FloatField(source="service.base_price", read_only=True)
+        multiple_usage = serializers.BooleanField(source="service.multiple_usage")
         price = serializers.FloatField(read_only=True)
 
         def get_service_type(self, obj):
