@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -25,6 +26,10 @@ class ContainerStorageStatisticsApi(APIView):
         new_arrived_containers = serializers.IntegerField()
         new_dispatched_containers = serializers.IntegerField()
 
+    @extend_schema(
+        summary="Get container storage statistics",
+        responses=ContainerStorageStatisticsSerializer,
+    )
     def get(self, request, *args, **kwargs):
         container_storage_service = ContainerStorageStatisticsService()
         statistics = container_storage_service.get_container_storage_statistics()

@@ -47,7 +47,7 @@ class TerminalServiceListApi(APIView):
         base_price = serializers.FloatField(read_only=True)
 
     class Pagination(LimitOffsetPagination):
-        default_limit = 10
+        default_limit = 100
         max_limit = 100
 
     def get(self, request):

@@ -1,5 +1,6 @@
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import serializers, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,6 +15,8 @@ from apps.customers.models import Company
 
 
 class ContainerStorageRegisterApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     class ContainerStorageRegisterSerializer(serializers.Serializer):
         container_name = serializers.CharField(max_length=11)
         container_size = serializers.ChoiceField(
@@ -98,6 +101,8 @@ class ContainerStorageRegisterApi(APIView):
 
 
 class ContainerStorageUpdateApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     class ContainerStorageUpdateSerializer(serializers.Serializer):
         container_name = serializers.CharField(max_length=11, required=True)
         container_size = serializers.ChoiceField(
@@ -164,6 +169,8 @@ class ContainerStorageUpdateApi(APIView):
 
 
 class ContainerStorageDeleteApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     class ContainerStorageDeleteSerializer(serializers.Serializer):
         pass
 
@@ -176,6 +183,8 @@ class ContainerStorageDeleteApi(APIView):
 
 
 class ContainerStorageListApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     class Pagination(LimitOffsetPagination):
         default_limit = 10
         max_limit = 100
@@ -328,6 +337,8 @@ class ContainerStorageListApi(APIView):
 
 
 class ContainerStorageDetailApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     class ContainerStorageDetailSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
         container = inline_serializer(
@@ -423,6 +434,10 @@ class ContainerStorageDetailApi(APIView):
                 )
             return dispatch_services
 
+    @extend_schema(
+        summary="Get container visit details",
+        responses=ContainerStorageDetailSerializer,
+    )
     def get(self, request, visit_id):
         container_storage_service = ContainerStorageService()
         container_storage = container_storage_service.get_container_visit(visit_id)
@@ -433,6 +448,8 @@ class ContainerStorageDetailApi(APIView):
 
 
 class ContainerStorageDispatchApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     class ContainerStorageExitSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
         exit_time = serializers.DateTimeField(required=True)
@@ -445,6 +462,10 @@ class ContainerStorageDispatchApi(APIView):
             required=True,
         )
 
+    @extend_schema(
+        summary="Dispatch container visit",
+        request=ContainerStorageExitSerializer,
+    )
     def put(self, request, visit_id):
         serializer = self.ContainerStorageExitSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -460,6 +481,8 @@ class ContainerStorageDispatchApi(APIView):
 
 
 class ContainerStorageListByCustomerApi(APIView):
+    permission_classes = [IsAuthenticated]
+
     class Pagination(LimitOffsetPagination):
         default_limit = 10
         max_limit = 100

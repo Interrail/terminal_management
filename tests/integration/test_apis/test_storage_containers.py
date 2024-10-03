@@ -12,7 +12,11 @@ from apps.core.models import Container
 
 @pytest.mark.django_db
 class TestContainerStorageRegistration:
-    def test_successful_registration(self, api_client, company, yard, contract_service):
+    def test_successful_registration(
+        self, api_client, company, yard, contract_service, obtain_jwt_token
+    ):
+        access_token = obtain_jwt_token["access"]
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_storage_register")
         data = {
             "container_name": "CONT1998221",
@@ -48,7 +52,10 @@ class TestContainerStorageRegistration:
         container_location,
         yard,
         contract_service,
+        obtain_jwt_token,
     ):
+        access_token = obtain_jwt_token["access"]
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_storage_register")
         data = {
             "container_name": "ABCD1998028",
@@ -75,7 +82,11 @@ class TestContainerStorageRegistration:
         assert ContainerStorage.objects.count() == 1
         assert Container.objects.count() == 1  # No new container created
 
-    def test_registration_with_nonexistent_customer(self, api_client, contract_service):
+    def test_registration_with_nonexistent_customer(
+        self, api_client, contract_service, obtain_jwt_token
+    ):
+        access_token = obtain_jwt_token["access"]
+        api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
         url = reverse("container_storage_register")
         data = {
             "container_name": "ABCD1998028",
