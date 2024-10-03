@@ -27,6 +27,13 @@ def api_client():
 
 
 @pytest.fixture
+def authenticated_api_client(api_client, obtain_jwt_token):
+    access_token = obtain_jwt_token["access"]
+    api_client.credentials(HTTP_AUTHORIZATION=f"Bearer {access_token}")
+    return api_client
+
+
+@pytest.fixture
 def user():
     return CustomUser.objects.create_user(
         username="test_user",
