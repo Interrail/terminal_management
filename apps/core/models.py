@@ -73,7 +73,7 @@ class TerminalService(BaseModel):
         max_digits=12, decimal_places=2, validators=[MinValueValidator(0)]
     )
     description = models.TextField(blank=True)
-    multiple_usable = models.BooleanField(default=False)
+    multiple_usage = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ["name", "container_size", "container_state"]

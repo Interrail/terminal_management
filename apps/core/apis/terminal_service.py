@@ -24,7 +24,7 @@ class TerminalServiceListApi(APIView):
         container_size = serializers.CharField(required=False)
         container_state = serializers.CharField(required=False)
         unit_of_measure = serializers.CharField(required=False)
-        multiple_usable = serializers.BooleanField(allow_null=True)
+        multiple_usage = serializers.BooleanField(allow_null=True)
 
     class ServiceListSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
@@ -44,7 +44,7 @@ class TerminalServiceListApi(APIView):
         container_state = serializers.ChoiceField(
             choices=ContainerState.choices, read_only=True
         )
-        multiple_usable = serializers.BooleanField(read_only=True)
+        multiple_usage = serializers.BooleanField(read_only=True)
         base_price = serializers.FloatField(read_only=True)
 
     class Pagination(LimitOffsetPagination):
@@ -85,7 +85,7 @@ class TerminalServiceDetailApi(APIView):
         container_state = serializers.ChoiceField(
             choices=ContainerState.choices, read_only=True
         )
-        multiple_usable = serializers.BooleanField(read_only=True)
+        multiple_usage = serializers.BooleanField(read_only=True)
         base_price = serializers.FloatField(read_only=True)
 
     def get(self, request, service_id):
@@ -105,7 +105,7 @@ class TerminalServiceCreateApi(APIView):
         service_type_id = serializers.IntegerField()
         container_size = serializers.ChoiceField(choices=ContainerSize.choices)
         container_state = serializers.ChoiceField(choices=ContainerState.choices)
-        multiple_usable = serializers.BooleanField(default=False)
+        multiple_usage = serializers.BooleanField(default=False)
         base_price = serializers.DecimalField(
             max_digits=12, decimal_places=2, allow_null=True
         )
@@ -141,7 +141,7 @@ class TerminalServiceUpdateApi(APIView):
         base_price = serializers.DecimalField(
             max_digits=12, decimal_places=2, allow_null=True
         )
-        multiple_usable = serializers.BooleanField(default=False)
+        multiple_usage = serializers.BooleanField(default=False)
 
         def validate_service_type_id(self, value):
             if not TerminalServiceType.objects.filter(id=value).exists():
@@ -179,7 +179,7 @@ class TerminalServiceUpdateApi(APIView):
         container_state = serializers.ChoiceField(
             choices=ContainerState.choices, read_only=True
         )
-        multiple_usable = serializers.BooleanField(read_only=True)
+        multiple_usage = serializers.BooleanField(read_only=True)
         base_price = serializers.FloatField(
             read_only=True,
         )
