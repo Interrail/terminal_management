@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from apps.core.choices import TransportType, ContainerState
 from apps.core.models import BaseModel, Container
+from apps.customers.models import ContractService
 
 
 class ContainerStorage(BaseModel):
@@ -122,3 +123,23 @@ class ContainerDocument(BaseModel):
 
     def __str__(self):
         return f" - {self.created_at}"
+
+
+class ContainerServiceInstance(BaseModel):
+    container_storage = models.ForeignKey(
+        ContainerStorage, on_delete=models.CASCADE, related_name="services"
+    )
+    contract_service = models.ForeignKey(
+        ContractService, on_delete=models.CASCADE, related_name="services"
+    )
+    performed_at = models.DateTimeField(default=timezone.now)
+    notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ["-performed_at"]
+        db_table = "container_service_instance"
+        verbose_name = "Container Service"
+        verbose_name_plural = "Container Services"
+
+    def __str__(self):
+        return f"{self.contract_service.service} for {self.container_storage.container} at {self.performed_at}"

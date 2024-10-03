@@ -1,6 +1,11 @@
 from django.contrib import admin
 
-from .models import ContainerStorage, ContainerDocument, ContainerImage
+from .models import (
+    ContainerStorage,
+    ContainerDocument,
+    ContainerImage,
+    ContainerServiceInstance,
+)
 from ..core.models import Container
 
 admin.site.register(Container)
@@ -15,3 +20,6 @@ class ContainerDocumentAdmin(admin.ModelAdmin):
 @admin.register(ContainerImage)
 class ContainerImageAdmin(admin.ModelAdmin):
     list_display = ["id", "name"]
+
+
+admin.site.register(ContainerServiceInstance)
