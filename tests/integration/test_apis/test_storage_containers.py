@@ -39,7 +39,13 @@ class TestContainerStorageRegistration:
             "company_id": company.id,
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [
+                {
+                    "id": contract_service.id,
+                    "date_from": "2024-01-01",
+                    "date_to": "2024-01-01",
+                }
+            ],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
@@ -119,7 +125,7 @@ class TestContainerStorageRegistration:
             "company_id": company.id,  # Non-existent customer ID
             "entry_time": custom_time,
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [{"id": contract_service.id}],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
@@ -161,7 +167,7 @@ class TestContainerStorageRegistration:
             "company_id": company.id,  # Non-existent customer ID
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [{"id": contract_service.id}],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
@@ -193,7 +199,7 @@ class TestContainerStorageRegistration:
             "company_id": company.id,  # Non-existent customer ID
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [{"id": contract_service.id}],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED

@@ -151,11 +151,19 @@ def contract(company):
 
 
 @pytest.fixture
-def contract_service(contract, service):
+def contract_service(company, service):
+    company = CompanyContract.objects.create(
+        company=company,
+        name="Test Contract",
+        start_date="2024-01-01",
+        end_date="2024-12-31",
+        is_active=True,
+    )
     return ContractService.objects.create(
-        contract=contract,
+        contract=company,
         service=service,
-        price=50,
+        price=300,
+        quantity=1,
     )
 
 
