@@ -100,7 +100,7 @@ class ContainerStorageRegisterApi(APIView):
 
 
 class ContainerStorageUpdateApi(APIView):
-    permission_classes = [IsAuthenticated]
+
 
     class ContainerStorageUpdateSerializer(serializers.Serializer):
         container_name = serializers.CharField(max_length=11, required=True)
@@ -168,7 +168,7 @@ class ContainerStorageUpdateApi(APIView):
 
 
 class ContainerStorageDeleteApi(APIView):
-    permission_classes = [IsAuthenticated]
+
 
     class ContainerStorageDeleteSerializer(serializers.Serializer):
         pass
@@ -182,7 +182,7 @@ class ContainerStorageDeleteApi(APIView):
 
 
 class ContainerStorageListApi(APIView):
-    permission_classes = [IsAuthenticated]
+
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
@@ -336,7 +336,7 @@ class ContainerStorageListApi(APIView):
 
 
 class ContainerStorageDetailApi(APIView):
-    permission_classes = [IsAuthenticated]
+
 
     class ContainerStorageDetailSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
@@ -480,7 +480,7 @@ class ContainerStorageDispatchApi(APIView):
 
 
 class ContainerStorageListByCustomerApi(APIView):
-    permission_classes = [IsAuthenticated]
+
 
     class Pagination(LimitOffsetPagination):
         default_limit = 10
