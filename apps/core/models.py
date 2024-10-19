@@ -1,7 +1,8 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from apps.core.choices import ContainerSize, ContainerState, MeasurementUnit
 
 
@@ -100,3 +101,26 @@ class FreeDayCombination(BaseModel):
 
     def __str__(self):
         return f"{self.get_container_size_display()} - {self.get_container_state_display()} - {self.get_category_display()}"
+
+
+@receiver(post_save, sender=TerminalService)
+def create_contract_services(sender, instance, created, **kwargs):
+    if created:
+        from apps.customers.models import CompanyContract, ContractService
+
+        # Get all company contracts
+        company_contracts = CompanyContract.objects.all()
+        contract_services = []
+
+        for contract in company_contracts:
+            contract_services.append(
+                ContractService(
+                    contract=contract,
+                    service=instance,
+                    price=instance.base_price,
+                    quantity=1,
+                )
+            )
+
+        # Bulk create the ContractService instances
+        ContractService.objects.bulk_create(contract_services)

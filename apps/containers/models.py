@@ -130,7 +130,9 @@ class ContainerServiceInstance(BaseModel):
         ContainerStorage, on_delete=models.CASCADE, related_name="services"
     )
     contract_service = models.ForeignKey(
-        ContractService, on_delete=models.CASCADE, related_name="services"
+        ContractService,
+        on_delete=models.CASCADE,
+        related_name="container_instance_services",
     )
     performed_at = models.DateTimeField(default=timezone.now)
     notes = models.TextField(blank=True, default="")
@@ -138,7 +140,7 @@ class ContainerServiceInstance(BaseModel):
     date_to = models.DateField(null=True, blank=True)
 
     class Meta:
-        ordering = ["-performed_at"]
+        ordering = ["-id"]
         db_table = "container_service_instance"
         verbose_name = "Container Service"
         verbose_name_plural = "Container Services"

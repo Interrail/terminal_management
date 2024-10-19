@@ -1,10 +1,16 @@
 from minio import Minio
 from minio.error import S3Error
-from terminal_management.settings.production import CDN_URL, CDN_ACCESS_KEY, CDN_SECRET_KEY, MTT_BUCKET
+from terminal_management.settings.production import (
+    CDN_URL,
+    CDN_ACCESS_KEY,
+    CDN_SECRET_KEY,
+    MTT_BUCKET,
+)
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 import time
+
 
 class CDNService:
     def __init__(self):
@@ -15,18 +21,20 @@ class CDNService:
     def generate_unique_filename(self, filename):
         return f"{int(time.time())}_{filename}"
 
-    def upload( self, file):
-        client = Minio(self.base_url,
-                    access_key=self.access_key,
-                    secret_key=self.secret_key,
-                    secure=True)
+    def upload(self, file):
+        client = Minio(
+            self.base_url,
+            access_key=self.access_key,
+            secret_key=self.secret_key,
+            secure=True,
+        )
 
         found = client.bucket_exists(MTT_BUCKET)
         if not found:
             client.make_bucket(MTT_BUCKET)
         else:
             print("Bucket", MTT_BUCKET, "already exists")
-        
+
         filename = self.generate_unique_filename(file.name)
         try:
             client.put_object(
@@ -34,7 +42,7 @@ class CDNService:
                 filename,
                 file,
                 length=-1,  # MinIO will calculate the length
-                part_size=5 * 1024 * 1024  # 10MB part size
+                part_size=5 * 1024 * 1024,  # 10MB part size
             )
 
             # Construct the full file path
@@ -48,6 +56,6 @@ class CDNService:
 
 class UploadFileApi(APIView):
     def post(self, request):
-        file = request.FILES['file']
+        file = request.FILES["file"]
         CDNService().upload(file)
         return Response(status=status.HTTP_202_ACCEPTED)

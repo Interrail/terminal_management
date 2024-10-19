@@ -8,6 +8,13 @@ from apps.containers.apis.container_storage import (
     ContainerStorageListByCustomerApi,
     ContainerStorageDetailApi,
     ContainerStorageDispatchApi,
+    ContainerStorageAvailableServicesApi,
+)
+from apps.containers.apis.container_storage_service import (
+    ContainerStorageServicesApi,
+    ContainerStorageServicesCreateApi,
+    ContainerStorageServiceDeleteApi,
+    ContainerStorageServiceUpdateApi,
 )
 from apps.containers.apis.container_storage_files import (
     ContainerStorageAddImageApi,
@@ -68,6 +75,11 @@ urlpatterns = [
         name="container_storage_register",
     ),
     path(
+        "container_visit/<int:visit_id>/available_services/",
+        ContainerStorageAvailableServicesApi.as_view(),
+        name="container_storage_available_services",
+    ),
+    path(
         "container_visit/<int:visit_id>/dispatch/",
         ContainerStorageDispatchApi.as_view(),
         name="container_storage_register_by_id",
@@ -96,6 +108,26 @@ urlpatterns = [
         "container_visit_list/by_company/<int:company_id>/",
         ContainerStorageListByCustomerApi.as_view(),
         name="container_storage_register_by_customer",
+    ),
+    path(
+        "container_visit/services/<int:visit_id>/",
+        ContainerStorageServicesApi.as_view(),
+        name="container_storage_services",
+    ),
+    path(
+        "container_visit/<int:visit_id>/services/create/",
+        ContainerStorageServicesCreateApi.as_view(),
+        name="container_storage_services_create",
+    ),
+    path(
+        "container_visit/services/<int:service_id>/delete/",
+        ContainerStorageServiceDeleteApi.as_view(),
+        name="container_storage_services_delete",
+    ),
+    path(
+        "container_visit/services/<int:service_id>/update/",
+        ContainerStorageServiceUpdateApi.as_view(),
+        name="container_storage_services_update",
     ),
     path("container_visit_statistics/", include(statistics_patterns)),
     path("files/", include(files_patterns)),

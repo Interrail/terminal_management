@@ -15,8 +15,6 @@ from apps.customers.models import Company
 
 
 class ContainerStorageRegisterApi(APIView):
-    permission_classes = [IsAuthenticated]
-
     class ContainerStorageRegisterSerializer(serializers.Serializer):
         container_name = serializers.CharField(max_length=11)
         container_size = serializers.ChoiceField(
@@ -36,8 +34,13 @@ class ContainerStorageRegisterApi(APIView):
         company_id = serializers.IntegerField(required=True)
         entry_time = serializers.DateTimeField(required=True)
         notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-        active_services = serializers.ListField(
-            child=serializers.IntegerField(),
+        services = inline_serializer(
+            fields={
+                "id": serializers.IntegerField(),
+                "date_from": serializers.DateTimeField(required=False),
+                "date_to": serializers.DateTimeField(required=False, allow_null=True),
+            },
+            many=True,
             required=True,
         )
 
@@ -129,14 +132,6 @@ class ContainerStorageUpdateApi(APIView):
         entry_time = serializers.DateTimeField(required=False)
         exit_time = serializers.DateTimeField(required=False, allow_null=True)
         notes = serializers.CharField(required=False, allow_blank=True, allow_null=True)
-        available_services = serializers.ListField(
-            child=serializers.IntegerField(),
-            required=False,
-        )
-        dispatch_services = serializers.ListField(
-            child=serializers.IntegerField(),
-            required=False,
-        )
 
         def validate_company_id(self, value):
             if not Company.objects.filter(id=value).exists():
@@ -260,54 +255,28 @@ class ContainerStorageListApi(APIView):
         free_days = serializers.IntegerField(
             read_only=True, source="contract.free_days"
         )
-        active_services = serializers.SerializerMethodField(
-            method_name="get_active_services"
-        )
-        dispatch_services = serializers.SerializerMethodField(
-            method_name="get_dispatch_services"
-        )
+        services = serializers.SerializerMethodField(method_name="get_services")
 
-        def get_active_services(self, obj):
-            active_services = []
-            for service in obj.active_services.all():
-                active_services.append(
+        def get_services(self, obj):
+            services = []
+            for service in obj.services.all():
+                services.append(
                     {
                         "id": service.id,
-                        "name": service.service.name,
-                        "description": service.service.description,
-                        "container_size": service.service.container_size,
-                        "container_state": service.service.container_state,
+                        "date_from": service.date_from,
+                        "date_to": service.date_to,
+                        "notes": service.notes,
+                        "performed_at": service.performed_at,
                         "service_type": {
-                            "id": service.service.service_type.id,
-                            "name": service.service.service_type.name,
-                            "unit_of_measure": service.service.service_type.unit_of_measure,
+                            "id": service.contract_service.service.service_type.id,
+                            "name": service.contract_service.service.service_type.name,
+                            "unit_of_measure": service.contract_service.service.service_type.unit_of_measure,
                         },
-                        "base_price": service.service.base_price,
-                        "price": service.price,
+                        "base_price": service.contract_service.service.base_price,
+                        "price": service.contract_service.price,
                     }
                 )
-            return active_services
-
-        def get_dispatch_services(self, obj):
-            dispatch_services = []
-            for service in obj.dispatch_services.all():
-                dispatch_services.append(
-                    {
-                        "id": service.id,
-                        "name": service.service.name,
-                        "description": service.service.description,
-                        "container_size": service.service.container_size,
-                        "container_state": service.service.container_state,
-                        "service_type": {
-                            "id": service.service.service_type.id,
-                            "name": service.service.service_type.name,
-                            "unit_of_measure": service.service.service_type.unit_of_measure,
-                        },
-                        "base_price": service.service.base_price,
-                        "price": service.price,
-                    }
-                )
-            return dispatch_services
+            return services
 
     @extend_schema(
         summary="List container visits",
@@ -385,54 +354,28 @@ class ContainerStorageDetailApi(APIView):
         free_days = serializers.IntegerField(
             read_only=True, source="contract.free_days"
         )
-        active_services = serializers.SerializerMethodField(
-            method_name="get_active_services"
-        )
-        dispatch_services = serializers.SerializerMethodField(
-            method_name="get_dispatch_services"
-        )
+        services = serializers.SerializerMethodField(method_name="get_services")
 
-        def get_active_services(self, obj):
-            active_services = []
-            for service in obj.active_services.all():
-                active_services.append(
+        def get_services(self, obj):
+            services = []
+            for service in obj.services.all():
+                services.append(
                     {
                         "id": service.id,
-                        "name": service.service.name,
-                        "description": service.service.description,
-                        "container_size": service.service.container_size,
-                        "container_state": service.service.container_state,
+                        "date_from": service.date_from,
+                        "date_to": service.date_to,
+                        "notes": service.notes,
+                        "performed_at": service.performed_at,
                         "service_type": {
-                            "id": service.service.service_type.id,
-                            "name": service.service.service_type.name,
-                            "unit_of_measure": service.service.service_type.unit_of_measure,
+                            "id": service.contract_service.service.service_type.id,
+                            "name": service.contract_service.service.service_type.name,
+                            "unit_of_measure": service.contract_service.service.service_type.unit_of_measure,
                         },
-                        "base_price": service.service.base_price,
-                        "price": service.price,
+                        "base_price": service.contract_service.service.base_price,
+                        "price": service.contract_service.price,
                     }
                 )
-            return active_services
-
-        def get_dispatch_services(self, obj):
-            dispatch_services = []
-            for service in obj.dispatch_services.all():
-                dispatch_services.append(
-                    {
-                        "id": service.id,
-                        "name": service.service.name,
-                        "description": service.service.description,
-                        "container_size": service.service.container_size,
-                        "container_state": service.service.container_state,
-                        "service_type": {
-                            "id": service.service.service_type.id,
-                            "name": service.service.service_type.name,
-                            "unit_of_measure": service.service.service_type.unit_of_measure,
-                        },
-                        "base_price": service.service.base_price,
-                        "price": service.price,
-                    }
-                )
-            return dispatch_services
+            return services
 
     @extend_schema(
         summary="Get container visit details",
@@ -477,6 +420,56 @@ class ContainerStorageDispatchApi(APIView):
                 container_storage
             ).data,
             status=status.HTTP_200_OK,
+        )
+
+
+class ContainerStorageAvailableServicesApi(APIView):
+    permission_classes = [IsAuthenticated]
+
+    class ContainerStorageAvailableServicesSerializer(serializers.Serializer):
+        pass
+
+    class ContainerStorageAvailableServicesOutputSerializer(serializers.Serializer):
+        id = serializers.IntegerField(read_only=True)
+        name = serializers.CharField(source="service.name", read_only=True)
+        description = serializers.CharField(
+            read_only=True, source="service.description"
+        )
+        container_size = serializers.CharField(
+            source="service.container_size", read_only=True
+        )
+        container_state = serializers.CharField(
+            source="service.container_state", read_only=True
+        )
+
+        service_type = inline_serializer(
+            fields={
+                "id": serializers.IntegerField(read_only=True),
+                "name": serializers.CharField(read_only=True),
+                "unit_of_measure": serializers.CharField(read_only=True),
+            },
+            source="service.service_type",
+        )
+        base_price = serializers.DecimalField(
+            source="service.base_price", read_only=True, max_digits=10, decimal_places=2
+        )
+        multiple_usage = serializers.BooleanField(
+            source="service.multiple_usage", read_only=True
+        )
+        price = serializers.DecimalField(
+            read_only=True, max_digits=10, decimal_places=2
+        )
+
+    @extend_schema(
+        summary="Get available services for container visit",
+        responses=ContainerStorageAvailableServicesOutputSerializer,
+    )
+    def get(self, request, visit_id):
+        services = ContainerStorageService().get_available_services(visit_id)
+        return Response(
+            self.ContainerStorageAvailableServicesOutputSerializer(
+                services, many=True
+            ).data
         )
 
 

@@ -6,6 +6,6 @@ from apps.cdn.cdn import CDNService
 
 class UploadFileApi(APIView):
     def post(self, request):
-        file = request.FILES['file']
+        file = request.FILES["file"]
         url = CDNService().upload(file)
         return Response(status=status.HTTP_200_OK, data={"url": url})

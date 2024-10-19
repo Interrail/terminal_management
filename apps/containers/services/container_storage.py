@@ -4,8 +4,10 @@ from django.shortcuts import get_object_or_404
 from apps.containers.filters import ContainerStorageFilter
 from apps.containers.models import (
     ContainerStorage,
+    ContainerServiceInstance,
 )
 from apps.core.services.container import ContainerService
+from apps.customers.models import ContractService
 from apps.customers.services import CompanyService
 from apps.locations.services import ContainerLocationService
 
@@ -26,21 +28,9 @@ class ContainerStorageService:
         )
         if container.in_storage:
             raise ValueError("Container is already in storage")
-
         company = self.company_service.get_company_by_id(data["company_id"])
-        entry_time = data["entry_time"]
-        storage_entry = ContainerStorage.objects.create(
-            container=container,
-            company=company,
-            container_owner=data["container_owner"],
-            product_name=data.get("product_name", ""),
-            transport_type=data["transport_type"],
-            transport_number=data["transport_number"],
-            container_state=data["container_state"],
-            entry_time=entry_time,
-            notes=data.get("notes", ""),
-        )
-        storage_entry.active_services.set(data.get("active_services", []))
+        storage_entry = self._create_storage_entry(data, container, company)
+        self._create_service_instances(storage_entry, data.pop("services", []))
 
         return storage_entry
 
@@ -56,9 +46,6 @@ class ContainerStorageService:
         container.name = container_name
         container.size = container_size
         container.save()
-
-        # Print debug information
-        print(f"Updated container: name={container.name}, size={container.size}")
 
         for key, value in data.items():
             setattr(visit, key, value)
@@ -123,3 +110,64 @@ class ContainerStorageService:
     def delete(self, visit_id):
         visit = get_object_or_404(ContainerStorage, id=visit_id)
         visit.delete()
+
+    def get_services(self, visit_id):
+        visit = self.get_container_visit(visit_id)
+
+        return ContainerServiceInstance.objects.filter(container_storage=visit)
+
+    def get_available_services(self, visit_id):
+        visit = self.get_container_visit(visit_id)
+        active_contract = visit.company.contracts.filter(is_active=True).first()
+
+        container_services = ContractService.objects.filter(
+            container_instance_services__container_storage=visit
+        )
+        services_for_one_time = container_services.filter(
+            service__multiple_usage=False
+        ).values_list("id", flat=True)
+
+        services = (
+            ContractService.objects.exclude(id__in=services_for_one_time)
+            .filter(contract=active_contract)
+            .distinct()
+        )
+
+        return services
+
+    def create_service_instances(self, visit_id, services):
+        visit = self.get_container_visit(visit_id)
+        self._create_service_instances(visit, services)
+
+    def delete_service_instance(self, service_id):
+        service = get_object_or_404(ContainerServiceInstance, id=service_id)
+        service.delete()
+
+    def update_service_instance(self, service_id, data):
+        service = get_object_or_404(ContainerServiceInstance, id=service_id)
+        for key, value in data.items():
+            setattr(service, key, value)
+        service.save()
+        return service
+
+    def _create_storage_entry(self, data, container, company):
+        return ContainerStorage.objects.create(
+            container=container,
+            company=company,
+            container_owner=data["container_owner"],
+            product_name=data.get("product_name", ""),
+            transport_type=data["transport_type"],
+            transport_number=data["transport_number"],
+            container_state=data["container_state"],
+            entry_time=data["entry_time"],
+            notes=data.get("notes", ""),
+        )
+
+    def _create_service_instances(self, storage_entry, services):
+        for service in services:
+            ContainerServiceInstance.objects.create(
+                contract_service_id=service.pop("id"),
+                container_storage=storage_entry,
+                date_from=service.pop("date_from", None),
+                date_to=service.pop("date_to", None),
+            )

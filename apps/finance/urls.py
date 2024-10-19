@@ -1,6 +1,12 @@
-from django.urls import path, include
+from django.urls import path
+
+from apps.finance.apis.api import ContainerStorageFinanceList
 
 service_type_patterns = []
 urlpatterns = [
-    path("service_types/", include(service_type_patterns)),
+    path(
+        "container/list/",
+        ContainerStorageFinanceList.as_view(),
+        name="container_storage_finance_list",
+    ),
 ]

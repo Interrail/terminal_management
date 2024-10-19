@@ -131,12 +131,8 @@ class TerminalServiceUpdateApi(APIView):
         name = serializers.CharField()
         description = serializers.CharField()
         service_type_id = serializers.IntegerField()
-        container_size = serializers.ChoiceField(
-            choices=ContainerSize.choices, read_only=True
-        )
-        container_state = serializers.ChoiceField(
-            choices=ContainerState.choices, read_only=True
-        )
+        container_size = serializers.ChoiceField(choices=ContainerSize.choices)
+        container_state = serializers.ChoiceField(choices=ContainerState.choices)
 
         base_price = serializers.DecimalField(
             max_digits=12, decimal_places=2, allow_null=True
