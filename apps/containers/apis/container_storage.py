@@ -15,7 +15,6 @@ from apps.customers.models import Company
 
 
 class ContainerStorageRegisterApi(APIView):
-    permission_classes = [IsAuthenticated]
 
     class ContainerStorageRegisterSerializer(serializers.Serializer):
         container_name = serializers.CharField(max_length=11)
