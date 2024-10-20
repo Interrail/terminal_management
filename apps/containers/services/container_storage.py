@@ -103,7 +103,6 @@ class ContainerStorageService:
         visit.exit_time = data.get("exit_time")
         visit.exit_transport_type = data.get("exit_transport_type")
         visit.exit_transport_number = data.get("exit_transport_number")
-        visit.dispatch_services.set(data.get("dispatch_services", []))
         visit.save()
         return visit
 

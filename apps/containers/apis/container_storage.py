@@ -394,10 +394,6 @@ class ContainerStorageDispatchApi(APIView):
             choices=TransportType.choices, required=True
         )
         exit_transport_number = serializers.CharField(required=True)
-        dispatch_services = serializers.ListField(
-            child=serializers.IntegerField(),
-            required=True,
-        )
 
     @extend_schema(
         summary="Dispatch container visit",
