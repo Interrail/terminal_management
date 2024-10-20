@@ -178,8 +178,6 @@ class ContainerStorageDeleteApi(APIView):
 
 
 class ContainerStorageListApi(APIView):
-    permission_classes = [IsAuthenticated]
-
     class Pagination(LimitOffsetPagination):
         default_limit = 10
         max_limit = 100
@@ -306,8 +304,6 @@ class ContainerStorageListApi(APIView):
 
 
 class ContainerStorageDetailApi(APIView):
-    permission_classes = [IsAuthenticated]
-
     class ContainerStorageDetailSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
         container = inline_serializer(
@@ -391,8 +387,6 @@ class ContainerStorageDetailApi(APIView):
 
 
 class ContainerStorageDispatchApi(APIView):
-    permission_classes = [IsAuthenticated]
-
     class ContainerStorageExitSerializer(serializers.Serializer):
         id = serializers.IntegerField(read_only=True)
         exit_time = serializers.DateTimeField(required=True)
@@ -424,8 +418,6 @@ class ContainerStorageDispatchApi(APIView):
 
 
 class ContainerStorageAvailableServicesApi(APIView):
-    permission_classes = [IsAuthenticated]
-
     class ContainerStorageAvailableServicesSerializer(serializers.Serializer):
         pass
 
@@ -474,8 +466,6 @@ class ContainerStorageAvailableServicesApi(APIView):
 
 
 class ContainerStorageListByCustomerApi(APIView):
-    permission_classes = [IsAuthenticated]
-
     class Pagination(LimitOffsetPagination):
         default_limit = 10
         max_limit = 100
