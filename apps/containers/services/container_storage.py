@@ -121,7 +121,9 @@ class ContainerStorageService:
         active_contract = visit.company.contracts.filter(is_active=True).first()
 
         container_services = ContractService.objects.filter(
-            container_instance_services__container_storage=visit
+            container_instance_services__container_storage=visit,
+            service__container_size=visit.container.size,
+            service__container_state=visit.container_state,
         )
         services_for_one_time = container_services.filter(
             service__multiple_usage=False
