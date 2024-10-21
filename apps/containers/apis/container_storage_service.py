@@ -46,7 +46,7 @@ class ContainerStorageServicesCreateApi(APIView):
         date_from = serializers.DateField(required=False)
         date_to = serializers.DateField(required=False, allow_null=True)
         notes = serializers.CharField(required=False)
-        service_id = serializers.IntegerField()
+        id = serializers.IntegerField()
 
     def post(self, request, visit_id):
         serializer = self.ContainerStorageServicesCreateSerializer(
