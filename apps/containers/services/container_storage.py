@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
 from apps.containers.filters import ContainerStorageFilter
@@ -6,6 +7,7 @@ from apps.containers.models import (
     ContainerStorage,
     ContainerServiceInstance,
 )
+from apps.core.choices import ContainerSize, ContainerState
 from apps.core.services.container import ContainerService
 from apps.customers.models import ContractService
 from apps.customers.services import CompanyService
@@ -130,8 +132,12 @@ class ContainerStorageService:
             ContractService.objects.exclude(id__in=services_for_one_time)
             .filter(
                 contract=active_contract,
-                service__container_size=visit.container.size,
-                service__container_state=visit.container_state,
+            )
+            .filter(
+                Q(service__container_size=visit.container.size)
+                | Q(service__container_size=ContainerSize.ANY),
+                Q(service__container_state=visit.container_state)
+                | Q(service__container_state=ContainerState.ANY),
             )
             .distinct()
         )
