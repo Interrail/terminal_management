@@ -167,7 +167,7 @@ class ContainerStorageService:
     def _create_service_instances(self, storage_entry, services):
         for service in services:
             ContainerServiceInstance.objects.create(
-                contract_service_id=service.pop("id"),
+                contract_service_id=service.pop("service_id"),
                 container_storage=storage_entry,
                 date_from=service.pop("date_from", None),
                 date_to=service.pop("date_to", None),
