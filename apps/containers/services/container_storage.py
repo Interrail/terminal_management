@@ -121,8 +121,6 @@ class ContainerStorageService:
 
         container_services = ContractService.objects.filter(
             container_instance_services__container_storage=visit,
-            service__container_size=visit.container.size,
-            service__container_state=visit.container_state,
         )
         services_for_one_time = container_services.filter(
             service__multiple_usage=False
@@ -130,7 +128,11 @@ class ContainerStorageService:
 
         services = (
             ContractService.objects.exclude(id__in=services_for_one_time)
-            .filter(contract=active_contract)
+            .filter(
+                contract=active_contract,
+                service__container_size=visit.container.size,
+                service__container_state=visit.container_state,
+            )
             .distinct()
         )
 
