@@ -43,7 +43,7 @@ class TestContainerStorageRegistration:
                 {
                     "id": contract_service.id,
                     "date_from": "2024-01-01",
-                    "date_to": "2024-01-01",
+                    "date_to": "2024-01-09",
                 }
             ],
         }
@@ -82,7 +82,13 @@ class TestContainerStorageRegistration:
             "company_id": company.id,
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [
+                {
+                    "id": contract_service.id,
+                    "date_from": "2024-01-01",
+                    "date_to": "2024-01-09",
+                }
+            ],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -104,7 +110,13 @@ class TestContainerStorageRegistration:
             "company_id": 9999999,  # Non-existent customer ID
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [
+                {
+                    "id": contract_service.id,
+                    "date_from": "2024-01-01",
+                    "date_to": "2024-01-09",
+                }
+            ],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -125,7 +137,13 @@ class TestContainerStorageRegistration:
             "company_id": company.id,  # Non-existent customer ID
             "entry_time": custom_time,
             "notes": "Test registration",
-            "services": [{"id": contract_service.id}],
+            "services": [
+                {
+                    "id": contract_service.id,
+                    "date_from": "2024-01-01",
+                    "date_to": "2024-01-09",
+                }
+            ],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_201_CREATED
@@ -147,7 +165,13 @@ class TestContainerStorageRegistration:
             "company_id": company.id,  # Non-existent customer ID
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [
+                {
+                    "id": contract_service.id,
+                    "date_from": "2024-01-01",
+                    "date_to": "2024-01-09",
+                }
+            ],
         }
         response = authenticated_api_client.post(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -234,7 +258,7 @@ class TestContainerStorageUpdate:
             "company_id": company.id,
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "available_services": [contract_service.id],
+            "services": [{"id": contract_service.id}],
         }
 
         # Print initial state
@@ -276,7 +300,7 @@ class TestContainerStorageUpdate:
             "company_id": company.id,  # Non-existent customer ID
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [{"id": contract_service.id}],
         }
         response = authenticated_api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -303,7 +327,7 @@ class TestContainerStorageUpdate:
             "company_id": company.id + 9999999,  # Non-existent customer ID
             "entry_time": "2024-01-01",
             "notes": "Test registration",
-            "active_services": [contract_service.id],
+            "services": [{"id": contract_service.id}],
         }
         response = authenticated_api_client.put(url, data, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
