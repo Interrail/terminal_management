@@ -1,3 +1,7 @@
+import os
+
+from cfgv import ValidationError
+from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
@@ -101,6 +105,83 @@ class ContainerStorageRegisterApi(APIView):
             self.ContainerStorageRegisterOutputSerializer(container).data,
             status=status.HTTP_201_CREATED,
         )
+
+
+class ContainerStorageRegisterBatchApi(APIView):
+    class ContainerStorageImportExcelSerializer(serializers.Serializer):
+        container_name = serializers.CharField(max_length=11)
+        container_size = serializers.ChoiceField(
+            required=True, choices=ContainerSize.choices
+        )
+        company_name = serializers.CharField(required=True)
+        container_state = serializers.CharField(required=True)
+        container_owner = serializers.CharField(required=True, allow_blank=True)
+        product_name = serializers.CharField(required=False, allow_blank=True)
+        transport_type = serializers.CharField(required=True)
+        transport_number = serializers.CharField(required=True, allow_blank=True)
+        entry_time = serializers.DateTimeField(required=True)
+
+        def validate_container_size(self, container_size: str) -> str:
+            if container_size not in dict(ContainerSize.choices).keys():
+                raise serializers.ValidationError("Invalid container size")
+            return container_size
+
+        def validate_container_state(self, container_state: str) -> str:
+            if container_state.lower() not in ["порожний", "груженый"]:
+                raise serializers.ValidationError("Invalid container state")
+            return container_state
+
+        def validate_transport_type(self, transport_type: str) -> str:
+            if transport_type.lower() not in ["авто", "вагон"]:
+                raise serializers.ValidationError("Invalid transport type")
+            return transport_type
+
+        def validate_company_name(self, company_name: str) -> str:
+            if not Company.objects.filter(name=company_name).exists():
+                raise serializers.ValidationError("Customer does not exist")
+            return company_name
+
+    def get(self, request):
+        file_path = os.path.join("./apps/utils", "import_excel_mtt.xlsx")
+        with open(file_path, "rb") as excel_file:
+            response = HttpResponse(
+                excel_file.read(),
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+            response["Content-Disposition"] = "attachment; filename=template.xlsx"
+            return response
+
+    def post(self, request):
+        serializer = self.ContainerStorageImportExcelSerializer(
+            data=request.data, many=True
+        )
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            service = ContainerStorageService()
+            service.register_container_batch_entry(serializer.validated_data)
+            return Response(status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            if hasattr(e, "detail") and isinstance(e.detail, dict):
+                error_response = {
+                    "message": "Validation error",
+                    "extra": {"fields": e.detail.get("fields", [])},
+                    "fields": e.detail.get("fields", []),
+                }
+            else:
+                # Handle serializer validation errors
+                error_response = {
+                    "message": "Validation error",
+                    "extra": {
+                        "fields": [
+                            {k: v} if v else {} for k, v in enumerate(serializer.errors)
+                        ]
+                    },
+                    "fields": [
+                        {k: v} if v else {} for k, v in enumerate(serializer.errors)
+                    ],
+                }
+            return Response(error_response, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ContainerStorageUpdateApi(APIView):

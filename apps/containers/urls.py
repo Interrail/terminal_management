@@ -9,12 +9,7 @@ from apps.containers.apis.container_storage import (
     ContainerStorageDetailApi,
     ContainerStorageDispatchApi,
     ContainerStorageAvailableServicesApi,
-)
-from apps.containers.apis.container_storage_service import (
-    ContainerStorageServicesApi,
-    ContainerStorageServicesCreateApi,
-    ContainerStorageServiceDeleteApi,
-    ContainerStorageServiceUpdateApi,
+    ContainerStorageRegisterBatchApi,
 )
 from apps.containers.apis.container_storage_files import (
     ContainerStorageAddImageApi,
@@ -23,6 +18,12 @@ from apps.containers.apis.container_storage_files import (
     ContainerStorageDocumentDeleteApi,
     ContainerStorageImageDownloadApi,
     ContainerStorageDocumentDownloadApi,
+)
+from apps.containers.apis.container_storage_service import (
+    ContainerStorageServicesApi,
+    ContainerStorageServicesCreateApi,
+    ContainerStorageServiceDeleteApi,
+    ContainerStorageServiceUpdateApi,
 )
 from apps.containers.apis.container_storage_statistics import (
     ContainerStorageStatisticsApi,
@@ -73,6 +74,11 @@ urlpatterns = [
         "container_visit_register/",
         ContainerStorageRegisterApi.as_view(),
         name="container_storage_register",
+    ),
+    path(
+        "container_visit_register_batch/",
+        ContainerStorageRegisterBatchApi.as_view(),
+        name="container_storage_register_batch",
     ),
     path(
         "container_visit/<int:visit_id>/available_services/",

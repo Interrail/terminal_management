@@ -1,6 +1,9 @@
+from typing import List, Dict, Any
+
 from django.db import transaction
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import ValidationError
 
 from apps.containers.filters import ContainerStorageFilter
 from apps.containers.models import (
@@ -21,20 +24,45 @@ class ContainerStorageService:
         self.location_service = ContainerLocationService()
 
     @transaction.atomic
-    def register_container_entry(
-        self,
-        data,
-    ):
+    def register_container_entry(self, data: Dict[str, Any]):
         container = self.container_service.get_or_create_container(
             data["container_name"], data["container_size"]
         )
         if container.in_storage:
-            raise ValueError("Container is already in storage")
+            raise ValidationError(
+                {"container_name": ["Container  is already in storage"]}
+            )
+
         company = self.company_service.get_company_by_id(data["company_id"])
         storage_entry = self._create_storage_entry(data, container, company)
         self._create_service_instances(storage_entry, data.pop("services", []))
-
         return storage_entry
+
+    @transaction.atomic
+    def register_container_batch_entry(self, data: List[Dict[str, Any]]):
+        field_errors = []
+
+        # Initialize the structure for all indices
+        for _ in range(len(data)):
+            field_errors.append({})
+
+        for index, entry in enumerate(data):
+            try:
+                with transaction.atomic():
+                    company = self.company_service.get_company_by_name(
+                        entry["company_name"]
+                    )
+                    entry["company_id"] = company.id
+                    self.register_container_entry(entry)
+            except ValidationError as e:
+                if "container_name" in e.detail:
+                    field_errors[index] = {"container_name": e.detail["container_name"]}
+                else:
+                    # For other validation errors (company, state, transport type)
+                    field_errors[index] = e.detail
+
+        if any(error for error in field_errors):
+            raise ValidationError(field_errors)
 
     def update_container_visit(self, visit_id, data):
         visit = get_object_or_404(ContainerStorage, id=visit_id)

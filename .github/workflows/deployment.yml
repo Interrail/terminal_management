@@ -83,7 +83,7 @@ jobs:
       run: |
         echo "${GITHUB_SHA:0:7}" > TAG
         sed -i "s|image: docker.interrail.uz:7007/${{ github.event.repository.name }}:[^[:space:]]*|image: docker.interrail.uz:7007/${{ github.event.repository.name }}:$(cat TAG)|" ./devops/terminal/terminal_backend/terminal_backend.yml
-  
+
     - name: Commit and Push Changes
       run: |
         git -C devops config user.name "${{ github.actor }}"
