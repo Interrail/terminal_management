@@ -120,6 +120,8 @@ class ContainerStorageRegisterBatchApi(APIView):
         transport_type = serializers.CharField(required=True)
         transport_number = serializers.CharField(required=True, allow_blank=True)
         entry_time = serializers.DateTimeField(required=True)
+        exit_time = serializers.DateTimeField(required=False, allow_null=True)
+        dispatch_method = serializers.CharField(required=False, allow_blank=True)
 
         def validate_container_size(self, container_size: str) -> str:
             if container_size not in dict(ContainerSize.choices).keys():
@@ -127,12 +129,17 @@ class ContainerStorageRegisterBatchApi(APIView):
             return container_size
 
         def validate_container_state(self, container_state: str) -> str:
-            if container_state.lower() not in ["порожний", "груженый"]:
+            if container_state.lower() not in [
+                "порожний",
+                "груженый",
+                "empty",
+                "loaded",
+            ]:
                 raise serializers.ValidationError("Invalid container state")
             return container_state
 
         def validate_transport_type(self, transport_type: str) -> str:
-            if transport_type.lower() not in ["авто", "вагон"]:
+            if transport_type.lower() not in ["авто", "вагон", "auto", "wagon"]:
                 raise serializers.ValidationError("Invalid transport type")
             return transport_type
 

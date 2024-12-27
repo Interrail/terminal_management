@@ -28,10 +28,10 @@ class ContainerStorageService:
         container = self.container_service.get_or_create_container(
             data["container_name"], data["container_size"]
         )
-        if container.in_storage:
-            raise ValidationError(
-                {"container_name": ["Container  is already in storage"]}
-            )
+        # if container.in_storage:
+        #     raise ValidationError(
+        #         {"container_name": ["Container  is already in storage"]}
+        #     )
 
         company = self.company_service.get_company_by_id(data["company_id"])
         storage_entry = self._create_storage_entry(data, container, company)
@@ -198,6 +198,8 @@ class ContainerStorageService:
             container_state=data["container_state"],
             entry_time=data["entry_time"],
             notes=data.get("notes", ""),
+            exit_time=data.get("exit_time", None),
+            exit_transport_type=data.get("dispatch_method", ""),
         )
 
     def _create_service_instances(self, storage_entry, services):

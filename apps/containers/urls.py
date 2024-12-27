@@ -19,6 +19,7 @@ from apps.containers.apis.container_storage_files import (
     ContainerStorageImageDownloadApi,
     ContainerStorageDocumentDownloadApi,
 )
+from apps.containers.apis.container_storage_report import ContainerStorageReportAPI
 from apps.containers.apis.container_storage_service import (
     ContainerStorageServicesApi,
     ContainerStorageServicesCreateApi,
@@ -69,7 +70,15 @@ statistics_patterns = [
         name="container_storage_register_by_id",
     ),
 ]
+report_patterns = [
+    path(
+        "<company_id>/",
+        ContainerStorageReportAPI.as_view(),
+        name="container_storage_report",
+    ),
+]
 urlpatterns = [
+    path("report/", include(report_patterns)),
     path(
         "container_visit_register/",
         ContainerStorageRegisterApi.as_view(),
